@@ -27,3 +27,9 @@ pip install djangorestframework-simplejwt djoser
 ```
 
 Luego, deberás configurar `djangorestframework-simplejwt` y `djoser` en tu archivo `settings.py`.
+
+TODO
+
+1. Crear superusuario (Fix)
+2. Probar endpoints de products, categories (Ahora que hay auth)
+3. Probar endopoints de clients

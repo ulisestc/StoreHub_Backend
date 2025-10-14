@@ -21,4 +21,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('products.urls')),
     path('api/', include('clients.urls')),
+
+    # Endpoints de autenticación
+    path('api/auth/', include('djoser.urls')), # DJOSER : Registro, login etc
+    path('api/auth/', include('djoser.urls.jwt')), # JWT : Manejo de tokens
 ]
