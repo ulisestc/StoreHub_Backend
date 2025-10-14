@@ -30,6 +30,6 @@ Luego, deberás configurar `djangorestframework-simplejwt` y `djoser` en tu arch
 
 TODO
 
-1. Crear superusuario (Fix)
+1. Crear superusuario (Fix) ✅ (se creó el manager personalizado)
 2. Probar endpoints de products, categories (Ahora que hay auth)
 3. Probar endopoints de clients
