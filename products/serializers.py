@@ -7,6 +7,8 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ProductSerializer(serializers.ModelSerializer):
+    is_active = serializers.BooleanField(default=True) # para evitar que se ponga false automaticamente al crear y no tener que agregarlo ecxplicitamtne
+    
     class Meta:
         model = Product
-        fields = '__all__'
+        fields = ['id', 'name', 'sku', 'price', 'stock', 'category', 'is_active']
