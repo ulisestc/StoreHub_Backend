@@ -19,8 +19,9 @@ from django.urls import include, path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('products.urls')),
-    path('api/', include('clients.urls')),
+    path('api/', include('products.urls')),# /products /categories
+    path('api/', include('clients.urls')), # /clients
+    path('api/', include('inventory.urls')), # /inventory
 
     # Endpoints de autenticación
     path('api/auth/', include('djoser.urls')), # DJOSER : Registro, login etc
