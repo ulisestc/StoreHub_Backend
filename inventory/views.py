@@ -4,6 +4,8 @@ from rest_framework.permissions import IsAuthenticated
 from .models import InventoryMovement
 from .serializers import InventoryMovementSerializer
 from django.db import transaction
+from rest_framework.permissions import IsAdminUser
+
 # Create your views here.
 class InventoryMovementViewSet(
     mixins.ListModelMixin, #GET
@@ -13,7 +15,7 @@ class InventoryMovementViewSet(
 ):
     queryset = InventoryMovement.objects.all().order_by('-timestamp')
     serializer_class = InventoryMovementSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
     def perform_create(self, serializer):
 

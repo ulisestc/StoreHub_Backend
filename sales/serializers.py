@@ -17,17 +17,17 @@ class SaleDetailSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['price_at_sale', 'product_name']
 
-        def validate(self, data):
-            product = data ['product']
-            quantity = data ['quantity']
+    def validate(self, data):
+        product = data ['product']
+        quantity = data ['quantity']
 
-            if quantity <= 0:
-                raise serializers.ValidationError("La cantidad debe ser mayor a cero.")
-            
-            if product.stock < quantity:
-                raise serializers.ValidationError("No hay suficiente stock para el producto seleccionado.")
-            
-            return data
+        if quantity <= 0:
+            raise serializers.ValidationError("La cantidad debe ser mayor a cero.")
+        
+        if product.stock < quantity:
+            raise serializers.ValidationError("No hay suficiente stock para el producto seleccionado.")
+        
+        return data
         
 class SaleSerializer(serializers.ModelSerializer):
     
@@ -47,13 +47,17 @@ class SaleSerializer(serializers.ModelSerializer):
             'user',
             'client',
             'client_name',
+            'subtotal',
+            'impuestos',
             'total',
             'created_at',
             'details',
         ]
-        read_only_fields = ['total', 'created_at', 'user', 'client_name']
+        read_only_fields = ['subtotal','impuestos','total', 'created_at', 'user', 'client_name']
 
-    def validate(self, details):
+    def validate(self, data):
+        details = data.get('details', [])
+        
         if not details:
             raise serializers.ValidationError("La venta debe tener al menos un detalle.")
-        return details
+        return data
