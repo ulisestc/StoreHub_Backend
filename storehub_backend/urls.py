@@ -23,6 +23,7 @@ urlpatterns = [
     path('api/', include('clients.urls')), # /clients
     path('api/', include('inventory.urls')), # /inventory
     path('api/', include('sales.urls')), # /sales
+    path('api/', include('reports.urls')), # /reports
 
     # Endpoints de autenticación
     path('api/auth/', include('djoser.urls')), # DJOSER : Registro, login etc
