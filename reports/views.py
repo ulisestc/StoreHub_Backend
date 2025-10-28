@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
 from django.db.models import Sum, Count
 from django.utils.dateparse import parse_date
+from products.serializers import ProductSerializer
 from sales.models import Sale, SaleDetail
 from products.models import Product
 
@@ -35,3 +36,19 @@ class TopProductsReport(APIView):
             .annotate(total_vendido=Sum('quantity')) \
             .order_by('-total_vendido')[:int(limit_str)]
         return Response(top_products)
+    
+class LowStockProductsReport(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        threshold = request.query_params.get('threshold', 10)
+        #corroboramos que es int
+        try: 
+            threshold = int(threshold)
+        except ValueError:
+            return Response({"error": "El parámetro 'threshold' debe ser un número entero."}, status=400)
+        
+        low_stock_products = Product.objects.filter(stock__lt=threshold, is_active= True).order_by('stock')
+        low_stock_products_serialized = ProductSerializer(low_stock_products, many=True)
+        return Response(low_stock_products_serialized.data)
+

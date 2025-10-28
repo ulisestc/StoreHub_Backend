@@ -34,4 +34,10 @@ TODO
 2. Probar endpoints de products, categories (Ahora que hay auth) ✅ ✅ 
 3. Probar endopoints de clients ✅ ✅ 
 4. Crear las vistas y logica de negocio de sales e inventory ✅ ✅ 
-5. Crear la aplicación de reportes
+5. Crear la aplicación de reportes ✅ ✅ 
+6. Crear reporte de low stock
+7. Agregar paginación global
+8. Busqueda por nombre, código y categoría en productos
+9. Verificar si existen / nos sirven los endpoints de djoser para accounts
+
+https://gemini.google.com/share/4433bde9b6f7
