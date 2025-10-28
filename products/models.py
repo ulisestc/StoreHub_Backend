@@ -12,3 +12,5 @@ class Product(models.Model):
     stock = models.PositiveIntegerField(default=0)
     category = models.ForeignKey(Category, related_name='products', on_delete=models.SET_NULL, null = True)
     is_active = models.BooleanField(default=True)
+    description = models.TextField(blank=True, null=True)
+    cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Costo 
