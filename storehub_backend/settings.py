@@ -156,9 +156,8 @@ DJOSER = {
         'current_user': 'accounts.serializers.CurrentUserSerializer', #/users/me/
     },
 
-    'PERMISSIONS': {
-        'user_list': ['rest_framework.permissions.IsAdminUser'], # /users/
-        'user': ['rest_framework.permissions.IsAdminUser'], # /users/{id}/
-        'current_user': ['rest_framework.permissions.IsAuthenticated'], # /users/me/
-    }
+    #'PERMISSIONS': {
+     #   'user_list': ['rest_framework.permissions.IsAdminUser'], # /users/
+      ## 'current_user': ['rest_framework.permissions.IsAuthenticated'], # /users/me/
+    #}
 }
