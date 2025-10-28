@@ -151,8 +151,14 @@ SIMPLE_JWT = {
 
 DJOSER = {
     'SERIALIZERS': {
-        'user_create': 'accounts.serializers.UserCreateSerializer',
-        'user': 'accounts.serializers.UserSerializer',
-        'current_user': 'accounts.serializers.UserSerializer',
+        'user_create': 'accounts.serializers.UserCreateSerializer', #/users/
+        'user': 'accounts.serializers.UserRoleSerializer', #/users/{id}/
+        'current_user': 'accounts.serializers.CurrentUserSerializer', #/users/me/
     },
+
+    'PERMISSIONS': {
+        'user_list': ['rest_framework.permissions.IsAdminUser'], # /users/
+        'user': ['rest_framework.permissions.IsAdminUser'], # /users/{id}/
+        'current_user': ['rest_framework.permissions.IsAuthenticated'], # /users/me/
+    }
 }
