@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-))uomh!niz6m%e3h@^c8v)c8^s9$r8b@fel3h%^hzq#63uxd^0
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['storehub-backend-xhr1.onrender.com']
 
 
 # Application definition
