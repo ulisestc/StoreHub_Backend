@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-))uomh!niz6m%e3h@^c8v)c8^s9$r8b@fel3h%^hzq#63uxd^0
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['storehub-backend-xhr1.onrender.com']
+ALLOWED_HOSTS = ['storehub-backend-xhr1.onrender.com', '127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -83,13 +83,17 @@ WSGI_APPLICATION = 'storehub_backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 import os
+from dotenv import load_dotenv
+load_dotenv()
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'OPTIONS': {
-            'read_default_file': os.path.join(BASE_DIR, "my.cnf"),
-            'charset': 'utf8mb4',
-        }
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST'),
+        'PORT': os.environ.get('DB_PORT'),
     }
 }
 
