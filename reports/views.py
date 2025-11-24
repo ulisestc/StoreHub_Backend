@@ -61,74 +61,86 @@
 
 from django.http import HttpResponse
 from django.template import loader
-from django.contrib.auth.decorators import login_required, user_passes_test
 from products.models import Product
 from sales.models import Sale, SaleDetail
 from django.db.models import Sum, Count
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
+
+# def isadmin():
+#     return lambda u: u.is_active and u.is_staff
 
 #_---------------------------------------------------------
 # @login_required
+# @user_passes_test(isadmin())
 #BASE PARA DASHBOARD, SE DESACTIVARÁ PUESTO QUE EL DASH SERA EN EL FRONT
-def reports(request):
-    # permissionClasses = [IsAdminUser]
-    template = loader.get_template('dashboard.html')
-    return HttpResponse(template.render())
+class reports(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    def get(self, request):
+        template = loader.get_template('dashboard.html')
+        return HttpResponse(template.render())
 
 #_---------------------------------------------------------
 # @login_required
-def SalesByDateReport(request):
-    # permissionClasses = [IsAdminUser]
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
+# @user_passes_test(isadmin())
+class SalesByDateReport(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    def get(self, request):
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
 
-    sales = Sale.objects.filter(created_at__range=[start_date, end_date])
-    report = sales.aggregate(
-        total_ventas=Sum('total'),
-        total_subtotal=Sum('subtotal'),
-        total_impuestos=Sum('impuestos'),
-        num_transacciones=Count('id')
-    )
+        sales = Sale.objects.filter(created_at__range=[start_date, end_date])
+        report = sales.aggregate(
+            total_ventas=Sum('total'),
+            total_subtotal=Sum('subtotal'),
+            total_impuestos=Sum('impuestos'),
+            num_transacciones=Count('id')
+        )
 
-    context = {
-        'report': report,
-        'start_date': start_date,
-        'end_date': end_date,
-        'sales': sales
-    }
-    template = loader.get_template('sales_by_date.html')
-    return HttpResponse(template.render(context))
-
-#_---------------------------------------------------------
-# @login_required
-def TopProductsReport(request):
-    # permissionClasses = [IsAdminUser]
-    threshold = request.GET.get('limit', 10)
-
-    top_products = SaleDetail.objects.values('product__name') \
-            .annotate(total_vendido=Sum('quantity')) \
-            .order_by('-total_vendido')[:int(threshold)]
-
-    context = {
-        'top_products': top_products,
-        'threshold': threshold
-    }
-
-    template = loader.get_template('top_products.html')
-    return HttpResponse(template.render(context))
+        context = {
+            'report': report,
+            'start_date': start_date,
+            'end_date': end_date,
+            'sales': sales
+        }
+        template = loader.get_template('sales_by_date.html')
+        return HttpResponse(template.render(context))
 
 #_---------------------------------------------------------
 # @login_required
-def LowStockProductsReport(request):
-    # permissionClasses = [IsAdminUser]
-    threshold = request.GET.get('threshold', 10)
+# @user_passes_test(isadmin())
+class TopProductsReport(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    def get(self, request):
+        threshold = request.GET.get('limit', 10)
 
-    stock_bajo = Product.objects.filter(stock__lt=threshold, is_active=True).order_by('stock')
+        top_products = SaleDetail.objects.values('product__name') \
+                .annotate(total_vendido=Sum('quantity')) \
+                .order_by('-total_vendido')[:int(threshold)]
 
-    context = {
-        'low_stock_products': stock_bajo,
-        'threshold': threshold
-    }
+        context = {
+            'top_products': top_products,
+            'threshold': threshold
+        }
 
-    template = loader.get_template('low_stock.html')
-    return HttpResponse(template.render(context))
+        template = loader.get_template('top_products.html')
+        return HttpResponse(template.render(context))
+
+#_---------------------------------------------------------
+# @login_required
+# @user_passes_test(isadmin())
+class LowStockProductsReport(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    def get(self, request):
+        threshold = request.GET.get('threshold', 10)
+
+        stock_bajo = Product.objects.filter(stock__lt=threshold, is_active=True).order_by('stock')
+
+        context = {
+            'low_stock_products': stock_bajo,
+            'threshold': threshold
+        }
+
+        template = loader.get_template('low_stock.html')
+        return HttpResponse(template.render(context))
 
