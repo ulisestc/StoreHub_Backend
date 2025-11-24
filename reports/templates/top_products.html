@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Products</title>
+</head>
+<body>
+    <h1>{{threshold}} productos más vendidos:</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Ventas</th>
+            </tr>
+        </thead>
+        <tbody>
+            {%for p in top_products %}
+            <tr>
+                <td>{{p.product__name}}</td>
+                <td>{{p.total_vendido}}</td>
+            </tr>
+            <!-- <p>{{p}}</p> -->
+            {% empty %}
+            <tr><td colspan="9">No hay productos</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

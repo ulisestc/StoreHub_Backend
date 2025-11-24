@@ -1,8 +1,9 @@
 from django.urls import path
-from .views import LowStockProductsReport, SalesByDateReport, TopProductsReport
+from .views import LowStockProductsReport, SalesByDateReport, TopProductsReport, reports
 
 urlpatterns = [
-    path('reports/sales-by-date/', SalesByDateReport.as_view()),
-    path('reports/top-products/', TopProductsReport.as_view()),
-    path('reports/low-stock-products/', LowStockProductsReport.as_view()),
+    path('reports', reports, name='reports'),
+    path('reports/sales-by-date/', SalesByDateReport, name='sales-by-date' ),
+    path('reports/top-products/', TopProductsReport, name='top-products' ),
+    path('reports/low-stock-products/', LowStockProductsReport, name='low-stock-products' ),
 ]
