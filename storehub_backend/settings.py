@@ -161,9 +161,25 @@ DJOSER = {
         'user': 'accounts.serializers.UserRoleSerializer', #/users/{id}/
         'current_user': 'accounts.serializers.CurrentUserSerializer', #/users/me/
     },
-
-    #'PERMISSIONS': {
-     #   'user_list': ['rest_framework.permissions.IsAdminUser'], # /users/
-      ## 'current_user': ['rest_framework.permissions.IsAuthenticated'], # /users/me/
-    #}
+    # https://djoser.readthedocs.io/en/latest/settings.html#permissions
+    'PERMISSIONS': {
+        #ESTAS SON LAS DEFAULT DE DJOSER
+        #Publicas
+        # 'activation': ['rest_framework.permissions.AllowAny'],
+        # 'password_reset': ['rest_framework.permissions.AllowAny'],
+        # 'password_reset_confirm': ['rest_framework.permissions.AllowAny'],
+        # 'username_reset': ['rest_framework.permissions.AllowAny'],
+        # 'username_reset_confirm': ['rest_framework.permissions.AllowAny'],
+        # 'user_create': ['rest_framework.permissions.AllowAny'],
+        # 'token_create': ['rest_framework.permissions.AllowAny'],
+        # # propias de una cuenta propia
+        # 'token_destroy': ['rest_framework.permissions.IsAuthenticated'],
+        # 'set_password': ['djoser.permissions.CurrentUserOrAdmin'],
+        # 'set_username': ['djoser.permissions.CurrentUserOrAdmin'],
+        # 'user_delete': ['djoser.permissions.CurrentUserOrAdmin'],
+        # # storehub
+        'user': ['rest_framework.permissions.IsAdminUser'], #solo admin ve o edita usuarios por id, los demás usan user/me
+        # 'user_list': ['rest_framework.permissions.IsAdminUser'], #solo admin lista usuarios
+        # 'current_user': ['djoser.permissions.CurrentUserOrAdmin'], #users/me
+}
 }
