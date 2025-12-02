@@ -25,7 +25,14 @@ class InventoryMovementViewSet(
 
         try: 
             with transaction.atomic():
-
+                
+                # Validaciones, no se puede usar negativos en quantity
+                if quantity <= 0:
+                    raise serializers.ValidationError("La cantidad debe ser mayor a cero.")
+                # No se puede sacar más de lo que hay en stock
+                if movement_type == 'out' and product.stock < quantity:
+                    raise serializers.ValidationError("No hay suficiente stock para realizar esta salida.")
+                # operaciones
                 if movement_type == 'in':
                     product.stock += quantity
                 elif movement_type == 'out':

@@ -7,7 +7,7 @@ from .models import Sale, SaleDetail
 from rest_framework import viewsets, serializers, mixins
 from rest_framework.permissions import IsAuthenticated
 from .serializers import SaleSerializer, SaleDetailSerializer
-from decimal import Decimal # <-- 1. Importar Decimal
+from decimal import Decimal 
 
 class SaleViewSet(
     mixins.CreateModelMixin,
@@ -22,6 +22,17 @@ class SaleViewSet(
     def perform_create(self, serializer):
         details_data = serializer.validated_data.pop('details')
 
+        # Validaciones
+        if not details_data:
+            raise serializers.ValidationError("La venta debe tener al menos un detalle.")
+        else:
+            for detail_data in details_data:
+                if detail_data['quantity'] <= 0:
+                    raise serializers.ValidationError("La cantidad debe ser mayor a cero.")
+                if detail_data['product'].stock < detail_data['quantity']:
+                    raise serializers.ValidationError("No hay suficiente stock para el producto seleccionado.")
+        # end validaciones -----------------------------
+
         try:
             with transaction.atomic():
                 
@@ -35,7 +46,7 @@ class SaleViewSet(
                     #se va sumando el subtotal y 
                     subtotal_sale += detail_data['product'].price * detail_data['quantity']
                     product = detail_data['product']
-                    quantity = detail_data['quantity']
+                    quantity = detail_data['quantity']      
                     price_at_sale = product.price
 
                     # Actualiza el stock del producto
