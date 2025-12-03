@@ -185,8 +185,8 @@ DJOSER = {
         # 'set_username': ['djoser.permissions.CurrentUserOrAdmin'],
         # 'user_delete': ['djoser.permissions.CurrentUserOrAdmin'],
         # # storehub
-        'user': ['rest_framework.permissions.IsAdminUser'], #solo admin ve o edita usuarios por id, los demás usan user/me
+        #'user': ['rest_framework.permissions.IsAdminUser'], #solo admin ve o edita usuarios por id, los demás usan user/me
         # 'user_list': ['rest_framework.permissions.IsAdminUser'], #solo admin lista usuarios
-        # 'current_user': ['djoser.permissions.CurrentUserOrAdmin'], #users/me
-}
+        #'current_user': ['djoser.permissions.CurrentUserOrAdmin'], #users/me
+    }
 }
