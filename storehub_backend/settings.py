@@ -61,14 +61,17 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOW_ORIGINS = [
-    'http://localhost:4200',
-    'http://127.0.0.1:4200',
-    'https://storehub-jda62kjtl-ulises-projects-d6b13da3.vercel.app',
-    'https://storehub-two.vercel.app',
-    'https://storehub-ulises-projects-d6b13da3.vercel.app'
+# CORS_ALLOW_ORIGINS = [
+#     'http://localhost:4200',
+#     'http://127.0.0.1:4200',
+#     'https://storehub-jda62kjtl-ulises-projects-d6b13da3.vercel.app',
+#     'https://storehub-two.vercel.app',
+#     'https://storehub-ulises-projects-d6b13da3.vercel.app'
 
-]
+# ]
+
+CORS_ALLOW_ALL_ORIGINS = True
+
 
 ROOT_URLCONF = 'storehub_backend.urls'
 
