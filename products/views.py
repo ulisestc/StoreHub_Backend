@@ -4,6 +4,7 @@ from .serializers import ProductSerializer, CategorySerializer
 from django.shortcuts import render
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.filters import SearchFilter
+from django_filters.rest_framework import DjangoFilterBackend
 
 # Create your views here.
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -16,7 +17,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes =  [IsAuthenticated] # Para no poder modificar sin ser usuario
 
-    filter_backends = [SearchFilter]
+    filter_backends = [SearchFilter, DjangoFilterBackend]
     search_fields = ['name', 'sku']  # parametro ?search=X
     filterset_fields = ['category']  # parametro ?category=X
     
