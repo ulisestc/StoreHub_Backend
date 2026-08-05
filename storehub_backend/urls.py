@@ -16,9 +16,22 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from rest_framework.schemas import get_schema_view
+from .views import health_check, swagger_ui
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # Documentación OpenAPI interactiva y Health Check
+    path('api/schema/', get_schema_view(
+        title="StoreHub REST API",
+        description="API REST de Gestión de Inventario, Ventas y Analítica Financiera para la FCC BUAP",
+        version="1.0.0"
+    ), name='openapi-schema'),
+    path('api/docs/', swagger_ui, name='swagger-ui'),
+    path('api/health/', health_check, name='health-check'),
+
+    # Endpoints de negocio
     path('api/', include('products.urls')),# /products /categories
     path('api/', include('clients.urls')), # /clients
     path('api/', include('inventory.urls')), # /inventory
@@ -29,3 +42,4 @@ urlpatterns = [
     path('api/auth/', include('djoser.urls')), # DJOSER : Registro, login etc
     path('api/auth/', include('djoser.urls.jwt')), # JWT : Manejo de tokens
 ]
+
