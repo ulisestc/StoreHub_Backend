@@ -18,6 +18,6 @@ class ProductViewSet(viewsets.ModelViewSet):
     permission_classes =  [IsAuthenticated] # Para no poder modificar sin ser usuario
 
     filter_backends = [SearchFilter, DjangoFilterBackend]
-    search_fields = ['name', 'sku']  # parametro ?search=X
-    filterset_fields = ['category']  # parametro ?category=X
+    search_fields = ['name', 'sku', 'barcode']  # parametro ?search=X
+    filterset_fields = ['category', 'barcode']  # parametro ?category=X o ?barcode=X
     
