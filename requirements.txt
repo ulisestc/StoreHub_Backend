@@ -11,14 +11,17 @@ django-filter==25.1
 djangorestframework==3.16.1
 djangorestframework_simplejwt==5.5.1
 djoser==2.3.3
+drf-spectacular==0.29.0
 gunicorn==23.0.0
 idna==3.11
+inflection==0.5.1
 mysqlclient==2.2.7
 oauthlib==3.3.1
 packaging==25.0
 pycparser==2.23
 PyJWT==2.10.1
 PyMySQL==1.1.2
+PyYAML==6.0.3
 python-dotenv==1.2.1
 python3-openid==3.2.0
 requests==2.32.5
@@ -27,5 +30,6 @@ social-auth-app-django==5.4.3
 social-auth-core==4.8.1
 sqlparse==0.5.3
 tzdata==2025.2
+uritemplate==4.2.0
 urllib3==2.5.0
 whitenoise==6.11.0

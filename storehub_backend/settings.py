@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'djoser',
     'django_filters',
     'corsheaders', # permitir peticiones desde localhost y vercel
+    'drf_spectacular', # Documentacion automatica OpenAPI (estilo exuth.uth.edu.mx)
 ]
 
 MIDDLEWARE = [
@@ -173,7 +174,16 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
     #fitlros
-    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],   
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+    # DOCS (drf-spectacular)
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'StoreHub REST API',
+    'DESCRIPTION': 'API REST de Gestión de Inventario, Ventas y Analítica Financiera - FCC BUAP 2036',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 SIMPLE_JWT = {

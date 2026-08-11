@@ -1,4 +1,4 @@
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.db import connection
 from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
@@ -31,59 +31,3 @@ def health_check(request):
         "institution": "FCC BUAP 2036"
     }
     return JsonResponse(data, status=status_code)
-
-
-def swagger_ui(request):
-    """
-    Interfaz interactiva Swagger UI para la documentación de OpenAPI.
-    """
-    html_content = """
-    <!DOCTYPE html>
-    <html lang="es">
-    <head>
-        <meta charset="UTF-8">
-        <title>StoreHub API - Swagger UI</title>
-        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.18.3/swagger-ui.min.css" />
-        <link rel="icon" type="image/png" href="https://swagger.io/favicon-32x32.png" sizes="32x32" />
-        <style>
-            html { box-sizing: border-box; overflow-y: scroll; }
-            *, *:before, *:after { box-sizing: inherit; }
-            body { margin: 0; background: #fafafa; font-family: sans-serif; }
-            .topbar { background-color: #1a202c; padding: 10px 0; }
-            .topbar-wrapper { display: flex; align-items: center; max-width: 1460px; margin: 0 auto; padding: 0 20px; }
-            .topbar-title { color: #ffffff; font-size: 20px; font-weight: bold; text-decoration: none; }
-            .topbar-subtitle { color: #a0aec0; font-size: 14px; margin-left: 15px; }
-        </style>
-    </head>
-    <body>
-        <div class="topbar">
-            <div class="topbar-wrapper">
-                <span class="topbar-title">🏬 StoreHub API Docs</span>
-                <span class="topbar-subtitle">Facultad de Ciencias de la Computación BUAP 2036</span>
-            </div>
-        </div>
-        <div id="swagger-ui"></div>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.18.3/swagger-ui-bundle.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.18.3/swagger-ui-standalone-preset.js"></script>
-        <script>
-        window.onload = function() {
-          const ui = SwaggerUIBundle({
-            url: "/api/schema/",
-            dom_id: '#swagger-ui',
-            deepLinking: true,
-            presets: [
-              SwaggerUIBundle.presets.apis,
-              SwaggerUIBundle.SwaggerUIStandalonePreset
-            ],
-            plugins: [
-              SwaggerUIBundle.plugins.DownloadUrl
-            ],
-            layout: "BaseLayout"
-          });
-          window.ui = ui;
-        };
-        </script>
-    </body>
-    </html>
-    """
-    return HttpResponse(html_content)
