@@ -10,11 +10,21 @@ class UserCreateSerializer(BaseUserCreateSerializer):
         fields = ('id', 'email', 'password', 'first_name', 'last_name')
         
 
+from rest_framework import serializers
+from .models import StoreProfile
+
+class StoreProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StoreProfile
+        fields = ('store_name', 'is_premium', 'max_products', 'max_users')
+
 # para editar propio usuario /users/me/
 class CurrentUserSerializer(BaseUserSerializer):
+    profile = StoreProfileSerializer(read_only=True)
+
     class Meta(BaseUserSerializer.Meta):
         model = User
-        fields = ('id', 'email', 'first_name', 'last_name', 'role', 'is_active', 'is_staff')
+        fields = ('id', 'email', 'first_name', 'last_name', 'role', 'is_active', 'is_staff', 'profile')
         read_only_fields = ('role', 'is_staff')
         permissionClasses = [IsAuthenticated]
 
