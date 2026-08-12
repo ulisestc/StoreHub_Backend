@@ -32,7 +32,14 @@ class Command(BaseCommand):
             if created:
                 admin_user.set_password('admin12345')
                 admin_user.save()
-                self.stdout.write(self.style.SUCCESS('  [+] Usuario Admin creado: admin@storehub.com / admin12345'))
+                
+                # Convertir a Premium
+                if hasattr(admin_user, 'profile'):
+                    admin_user.profile.is_premium = True
+                    admin_user.profile.max_products = 5000
+                    admin_user.profile.save()
+                    
+                self.stdout.write(self.style.SUCCESS('  [+] Usuario Admin creado: admin@storehub.com / admin12345 (PREMIUM)'))
 
             seller_user, created = User.objects.get_or_create(
                 email='vendedor@storehub.com',
@@ -69,26 +76,26 @@ class Command(BaseCommand):
             # 3. Crear Productos
             products_data = [
                 # Electrónica
-                {'name': 'Laptop Lenovo IdeaPad 15"', 'sku': 'ELE-001', 'price': '12999.00', 'cost_price': '9500.00', 'stock': 15, 'cat': 'Electrónica y Cómputo', 'desc': 'Intel Core i5, 16GB RAM, 512GB SSD'},
-                {'name': 'Mouse Inalámbrico Logitech M185', 'sku': 'ELE-002', 'price': '299.00', 'cost_price': '180.00', 'stock': 50, 'cat': 'Electrónica y Cómputo', 'desc': 'Conexión 2.4GHz USB nanorreceptor'},
-                {'name': 'Teclado Mecánico RGB Redragon', 'sku': 'ELE-003', 'price': '899.00', 'cost_price': '550.00', 'stock': 25, 'cat': 'Electrónica y Cómputo', 'desc': 'Switches Red silenciosos, iluminación RGB'},
-                {'name': 'Audífonos Bluetooth Sony WH-CH520', 'sku': 'ELE-004', 'price': '1199.00', 'cost_price': '750.00', 'stock': 20, 'cat': 'Electrónica y Cómputo', 'desc': 'Hasta 50h de batería, micrófono integrado'},
-                {'name': 'Monitor LG 24" Full HD 75Hz', 'sku': 'ELE-005', 'price': '2499.00', 'cost_price': '1700.00', 'stock': 8, 'cat': 'Electrónica y Cómputo', 'desc': 'Panel IPS, HDMI y VGA'},
+                {'name': 'Laptop Lenovo IdeaPad 15"', 'sku': 'ELE-001', 'barcode': '750100000001', 'price': '12999.00', 'cost_price': '9500.00', 'stock': 15, 'cat': 'Electrónica y Cómputo', 'desc': 'Intel Core i5, 16GB RAM, 512GB SSD'},
+                {'name': 'Mouse Inalámbrico Logitech M185', 'sku': 'ELE-002', 'barcode': '750100000002', 'price': '299.00', 'cost_price': '180.00', 'stock': 50, 'cat': 'Electrónica y Cómputo', 'desc': 'Conexión 2.4GHz USB nanorreceptor'},
+                {'name': 'Teclado Mecánico RGB Redragon', 'sku': 'ELE-003', 'barcode': '750100000003', 'price': '899.00', 'cost_price': '550.00', 'stock': 25, 'cat': 'Electrónica y Cómputo', 'desc': 'Switches Red silenciosos, iluminación RGB'},
+                {'name': 'Audífonos Bluetooth Sony WH-CH520', 'sku': 'ELE-004', 'barcode': '750100000004', 'price': '1199.00', 'cost_price': '750.00', 'stock': 20, 'cat': 'Electrónica y Cómputo', 'desc': 'Hasta 50h de batería, micrófono integrado'},
+                {'name': 'Monitor LG 24" Full HD 75Hz', 'sku': 'ELE-005', 'barcode': '750100000005', 'price': '2499.00', 'cost_price': '1700.00', 'stock': 8, 'cat': 'Electrónica y Cómputo', 'desc': 'Panel IPS, HDMI y VGA'},
 
                 # Papelería
-                {'name': 'Cuaderno Profesional Scribe 100h', 'sku': 'PAP-001', 'price': '45.00', 'cost_price': '25.00', 'stock': 120, 'cat': 'Papelería y Oficina', 'desc': 'Pasta dura, cuadro chico'},
-                {'name': 'Caja de Plumas Bic Azul 12 pzs', 'sku': 'PAP-002', 'price': '78.00', 'cost_price': '45.00', 'stock': 80, 'cat': 'Papelería y Oficina', 'desc': 'Punto mediano 1.0mm'},
-                {'name': 'Paquete Hojas Blancas Carta 500h', 'sku': 'PAP-003', 'price': '115.00', 'cost_price': '75.00', 'stock': 40, 'cat': 'Papelería y Oficina', 'desc': 'Papel bond 75g/m2'},
-                {'name': 'Mochila Escolar Impermeable BUAP', 'sku': 'PAP-004', 'price': '450.00', 'cost_price': '250.00', 'stock': 5, 'cat': 'Papelería y Oficina', 'desc': 'Compartimento para laptop 15.6"'},
+                {'name': 'Cuaderno Profesional Scribe 100h', 'sku': 'PAP-001', 'barcode': '750200000001', 'price': '45.00', 'cost_price': '25.00', 'stock': 120, 'cat': 'Papelería y Oficina', 'desc': 'Pasta dura, cuadro chico'},
+                {'name': 'Caja de Plumas Bic Azul 12 pzs', 'sku': 'PAP-002', 'barcode': '750200000002', 'price': '78.00', 'cost_price': '45.00', 'stock': 80, 'cat': 'Papelería y Oficina', 'desc': 'Punto mediano 1.0mm'},
+                {'name': 'Paquete Hojas Blancas Carta 500h', 'sku': 'PAP-003', 'barcode': '750200000003', 'price': '115.00', 'cost_price': '75.00', 'stock': 40, 'cat': 'Papelería y Oficina', 'desc': 'Papel bond 75g/m2'},
+                {'name': 'Mochila Escolar Impermeable BUAP', 'sku': 'PAP-004', 'barcode': '750200000004', 'price': '450.00', 'cost_price': '250.00', 'stock': 5, 'cat': 'Papelería y Oficina', 'desc': 'Compartimento para laptop 15.6"'},
 
                 # Abarrotes
-                {'name': 'Café Soluble Nescafé Clásico 200g', 'sku': 'ABA-001', 'price': '110.00', 'cost_price': '78.00', 'stock': 60, 'cat': 'Abarrotes y Bebidas', 'desc': 'Café 100% puro soluble'},
-                {'name': 'Agua Embotellada Ciel 1.5L', 'sku': 'ABA-002', 'price': '18.00', 'cost_price': '9.00', 'stock': 150, 'cat': 'Abarrotes y Bebidas', 'desc': 'Agua purificada sin gas'},
-                {'name': 'Galletas Emperador Chocolate 109g', 'sku': 'ABA-003', 'price': '22.00', 'cost_price': '13.00', 'stock': 90, 'cat': 'Abarrotes y Bebidas', 'desc': 'Galletas rellenas sabor chocolate'},
+                {'name': 'Café Soluble Nescafé Clásico 200g', 'sku': 'ABA-001', 'barcode': '750300000001', 'price': '110.00', 'cost_price': '78.00', 'stock': 60, 'cat': 'Abarrotes y Bebidas', 'desc': 'Café 100% puro soluble'},
+                {'name': 'Agua Embotellada Ciel 1.5L', 'sku': 'ABA-002', 'barcode': '750300000002', 'price': '18.00', 'cost_price': '9.00', 'stock': 150, 'cat': 'Abarrotes y Bebidas', 'desc': 'Agua purificada sin gas'},
+                {'name': 'Galletas Emperador Chocolate 109g', 'sku': 'ABA-003', 'barcode': '750300000003', 'price': '22.00', 'cost_price': '13.00', 'stock': 90, 'cat': 'Abarrotes y Bebidas', 'desc': 'Galletas rellenas sabor chocolate'},
 
                 # Accesorios
-                {'name': 'Termo Acero Inoxidable 800ml', 'sku': 'ACC-001', 'price': '280.00', 'cost_price': '140.00', 'stock': 30, 'cat': 'Accesorios y Moda', 'desc': 'Conserva bebidas frías y calientes 12h'},
-                {'name': 'Llavero Conmemorativo FCC BUAP', 'sku': 'ACC-002', 'price': '60.00', 'cost_price': '20.00', 'stock': 200, 'cat': 'Accesorios y Moda', 'desc': 'Edición especial Feria de Proyectos 2036'}
+                {'name': 'Termo Acero Inoxidable 800ml', 'sku': 'ACC-001', 'barcode': '750400000001', 'price': '280.00', 'cost_price': '140.00', 'stock': 30, 'cat': 'Accesorios y Moda', 'desc': 'Conserva bebidas frías y calientes 12h'},
+                {'name': 'Llavero Conmemorativo FCC BUAP', 'sku': 'ACC-002', 'barcode': '750400000002', 'price': '60.00', 'cost_price': '20.00', 'stock': 200, 'cat': 'Accesorios y Moda', 'desc': 'Edición especial Feria de Proyectos 2036'}
             ]
 
             product_objs = []
@@ -97,6 +104,7 @@ class Command(BaseCommand):
                     sku=p['sku'],
                     defaults={
                         'name': p['name'],
+                        'barcode': p['barcode'],
                         'price': Decimal(p['price']),
                         'cost_price': Decimal(p['cost_price']),
                         'stock': p['stock'],

@@ -44,15 +44,27 @@ class StoreProfile(models.Model):
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.db.utils import OperationalError, ProgrammingError
+from django.db import transaction
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
-        StoreProfile.objects.create(
-            user=instance, 
-            store_name=f"Tienda de {instance.first_name}" if instance.first_name else "Mi Tiendita"
-        )
+        try:
+            with transaction.atomic():
+                StoreProfile.objects.create(
+                    user=instance, 
+                    store_name=f"Tienda de {instance.first_name}" if instance.first_name else "Mi Tiendita"
+                )
+        except (OperationalError, ProgrammingError):
+            # Ignorar si la tabla aún no existe (durante las migraciones previas)
+            pass
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
-    instance.profile.save()
+    try:
+        if hasattr(instance, 'profile'):
+            with transaction.atomic():
+                instance.profile.save()
+    except (OperationalError, ProgrammingError):
+        pass

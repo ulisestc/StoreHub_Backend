@@ -82,7 +82,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 
-ROOT_URLCONF = 'storehub_backend.urls'
+ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
     {
@@ -100,7 +100,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'storehub_backend.wsgi.application'
+WSGI_APPLICATION = 'config.wsgi.application'
 
 
 # Database
@@ -119,6 +119,13 @@ else:
             'HOST': env('DB_HOST', default='localhost'),
             'PORT': env('DB_PORT', default='3306'),
         }
+    }
+
+import sys
+if 'test' in sys.argv:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 
 # Password validation
