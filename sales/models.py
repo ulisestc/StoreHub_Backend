@@ -1,9 +1,9 @@
 from django.db import models
 
-# Create your models here.
 class Sale(models.Model):
     user = models.ForeignKey('accounts.User', on_delete=models.CASCADE)
     client = models.ForeignKey('clients.Client', on_delete=models.SET_NULL, null=True)
+    store = models.ForeignKey('accounts.Store', on_delete=models.CASCADE, related_name='sales')
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
     impuestos = models.DecimalField(max_digits=10, decimal_places=2)
     total = models.DecimalField(max_digits=10, decimal_places=2)

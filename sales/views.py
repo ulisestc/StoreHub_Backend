@@ -16,7 +16,8 @@ class SaleViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet
 ):
-    queryset = Sale.objects.all().order_by('-created_at')
+    def get_queryset(self):
+        return Sale.objects.filter(store=self.request.user.store).order_by('-created_at')
     serializer_class = SaleSerializer
     permission_classes = [IsAuthenticated]
 
@@ -68,7 +69,7 @@ class SaleViewSet(
                 total_sale = subtotal_sale + impuestos_sale
 
                 #Instancia la venta con todo y detalles
-                sale = serializer.save(user=self.request.user, total=total_sale, subtotal = subtotal_sale, impuestos=impuestos_sale)
+                sale = serializer.save(user=self.request.user, store=self.request.user.store, total=total_sale, subtotal = subtotal_sale, impuestos=impuestos_sale)
 
                 for detail in sale_details_to_create:
                     detail.sale = sale

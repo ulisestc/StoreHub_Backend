@@ -8,11 +8,13 @@ User = get_user_model()
 
 class ProductsTestCase(APITestCase):
     def setUp(self):
-        self.user = User.objects.create_user(email='test@example.com', password='test')
+        self.user = User.objects.create_user(email='test@example.com', password='test', role='admin')
+        self.user.refresh_from_db()
         self.client.force_authenticate(user=self.user)
         
-        self.category = Category.objects.create(name="Abarrotes")
+        self.category = Category.objects.create(name="Abarrotes", store=self.user.store)
         self.product = Product.objects.create(
+            store=self.user.store,
             name="Gansito",
             sku="ABA-010",
             barcode="750100100",
@@ -27,7 +29,6 @@ class ProductsTestCase(APITestCase):
         """
         response = self.client.get('/api/products/?barcode=750100100')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # La paginación devuelve count, next, previous, results
         self.assertEqual(response.data['count'], 1)
         self.assertEqual(response.data['results'][0]['name'], "Gansito")
 
@@ -52,4 +53,4 @@ class ProductsTestCase(APITestCase):
         }
         response = self.client.post('/api/products/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('barcode', response.data)
+        self.assertIn('non_field_errors', response.data) # unique_together throws non_field_errors

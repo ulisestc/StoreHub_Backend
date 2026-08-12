@@ -1,8 +1,28 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from .managers import CustomUserManager
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.db.utils import OperationalError, ProgrammingError
+from django.db import transaction
 
-# Create your models here.
+class Store(models.Model):
+    name = models.CharField("Nombre de la tienda", max_length=100)
+    
+    # Feature Flags
+    is_premium = models.BooleanField("Premium Status", default=False) 
+    
+    # Límites de Cuota (Quotas)
+    max_products = models.IntegerField("Límite de productos", default=50)
+    max_users = models.IntegerField("Límite de usuarios", default=2)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Tienda'
+        verbose_name_plural = 'Tiendas'
+
 class User(AbstractUser):
     ROLE_CHOICES = (
         ('admin', 'Admin'),
@@ -14,6 +34,9 @@ class User(AbstractUser):
     role = models.CharField("Rol", max_length=10, choices=ROLE_CHOICES, default='seller')
     first_name = models.CharField("Nombres", max_length=150)
     last_name = models.CharField("Apellidos", max_length=150)
+    
+    # Multi-tenancy
+    store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='users', null=True, blank=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -24,47 +47,15 @@ class User(AbstractUser):
         verbose_name = 'Usuario'
         verbose_name_plural = 'Usuarios'
 
-class StoreProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    store_name = models.CharField("Nombre de la tienda", max_length=100)
-    
-    # Feature Flags
-    is_premium = models.BooleanField("Premium Status", default=False) 
-    
-    # Límites de Cuota (Quotas)
-    max_products = models.IntegerField("Límite de productos", default=50) # La tiendita gratis solo puede registrar 50 productos
-    max_users = models.IntegerField("Límite de usuarios", default=2) # Solo dos cajeros en la versión gratis
-
-    def __str__(self):
-        return f"Perfil de {self.user.email} - {self.store_name}"
-
-    class Meta:
-        verbose_name = 'Perfil de Tienda'
-        verbose_name_plural = 'Perfiles de Tienda'
-
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django.db.utils import OperationalError, ProgrammingError
-from django.db import transaction
-
 @receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
-    if created:
+def create_user_store(sender, instance, created, **kwargs):
+    if created and instance.role == 'admin':
         try:
             with transaction.atomic():
-                StoreProfile.objects.create(
-                    user=instance, 
-                    store_name=f"Tienda de {instance.first_name}" if instance.first_name else "Mi Tiendita"
+                store = Store.objects.create(
+                    name=f"Tienda de {instance.first_name}" if instance.first_name else "Mi Tiendita"
                 )
+                # Usar update() para no disparar recursivamente el post_save
+                User.objects.filter(pk=instance.pk).update(store=store)
         except (OperationalError, ProgrammingError):
-            # Ignorar si la tabla aún no existe (durante las migraciones previas)
             pass
-
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
-    try:
-        if hasattr(instance, 'profile'):
-            with transaction.atomic():
-                instance.profile.save()
-    except (OperationalError, ProgrammingError):
-        pass
