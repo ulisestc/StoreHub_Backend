@@ -19,7 +19,8 @@ urlpatterns = [
     path('api/', include('sales.urls')),    # /sales
     path('api/', include('reports.urls')),  # /reports
 
-    # Endpoints de autenticación
+    # Endpoints de autenticación y gestión de empleados
+    path('api/', include('accounts.urls')),    # /employees
     path('api/auth/', include('djoser.urls')), # DJOSER : Registro, login etc
     path('api/auth/', include('djoser.urls.jwt')), # JWT : Manejo de tokens
 ]

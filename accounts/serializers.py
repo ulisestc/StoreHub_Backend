@@ -27,8 +27,24 @@ class CurrentUserSerializer(BaseUserSerializer):
         permissionClasses = [IsAuthenticated]
 
 #para asignar administrador o vendedor /users/{id}/
+#para asignar administrador o vendedor /users/{id}/
 class UserRoleSerializer(BaseUserSerializer):
     class Meta(BaseUserSerializer.Meta):
         model = User
         fields = ('id', 'email', 'first_name', 'last_name', 'role', 'is_active', 'is_staff', 'store')
         permissionClasses = [IsAdminUser]
+
+class EmployeeSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ('id', 'email', 'first_name', 'last_name', 'password', 'is_active')
+
+    def create(self, validated_data):
+        password = validated_data.pop('password')
+        # El store, role e is_active=False se asignarán en el perform_create del ViewSet
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
+        return user

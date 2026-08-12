@@ -198,6 +198,10 @@ SIMPLE_JWT = {
 }
 
 DJOSER = {
+    'SEND_ACTIVATION_EMAIL': True,
+    'DOMAIN': env('FRONTEND_DOMAIN', default='localhost:4200'),
+    'SITE_NAME': 'StoreHub',
+    'ACTIVATION_URL': env('FRONTEND_ACTIVATION_URL', default='activate/{uid}/{token}'),
     'SERIALIZERS': {
         'user_create': 'accounts.serializers.UserCreateSerializer', #/users/
         'user': 'accounts.serializers.UserRoleSerializer', #/users/{id}/
