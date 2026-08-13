@@ -203,6 +203,7 @@ SITE_NAME = 'StoreHub'
 DJOSER = {
     'SEND_ACTIVATION_EMAIL': True,
     'ACTIVATION_URL': env('FRONTEND_ACTIVATION_URL', default='activate/{uid}/{token}'),
+    'PASSWORD_RESET_CONFIRM_URL': env('FRONTEND_RESET_PASSWORD_URL', default='reset-password/{uid}/{token}'),
     'SERIALIZERS': {
         'user_create': 'accounts.serializers.UserCreateSerializer', #/users/
         'user': 'accounts.serializers.UserRoleSerializer', #/users/{id}/

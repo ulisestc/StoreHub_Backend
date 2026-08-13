@@ -1,7 +1,7 @@
 from django.db import models
 
 class Sale(models.Model):
-    user = models.ForeignKey('accounts.User', on_delete=models.CASCADE)
+    user = models.ForeignKey('accounts.User', on_delete=models.SET_NULL, null=True)
     client = models.ForeignKey('clients.Client', on_delete=models.SET_NULL, null=True)
     store = models.ForeignKey('accounts.Store', on_delete=models.CASCADE, related_name='sales')
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)

@@ -9,9 +9,16 @@ from django.db import transaction
 class Store(models.Model):
     name = models.CharField("Nombre de la tienda", max_length=100)
     
-    # Feature Flags
+    # Feature Flags y Estados
     is_premium = models.BooleanField("Premium Status", default=False) 
+    is_setup_complete = models.BooleanField("Configuración completa", default=False)
     
+    # Información Pública / Recibos
+    address = models.CharField("Dirección", max_length=255, blank=True)
+    phone = models.CharField("Teléfono", max_length=20, blank=True)
+    email = models.EmailField("Correo de contacto", blank=True)
+    receipt_message = models.TextField("Mensaje de ticket", blank=True, help_text="Mensaje que aparece al final de los tickets de compra.")
+
     # Límites de Cuota (Quotas)
     max_products = models.IntegerField("Límite de productos", default=50)
     max_users = models.IntegerField("Límite de usuarios", default=2)
@@ -34,6 +41,7 @@ class User(AbstractUser):
     role = models.CharField("Rol", max_length=10, choices=ROLE_CHOICES, default='seller')
     first_name = models.CharField("Nombres", max_length=150)
     last_name = models.CharField("Apellidos", max_length=150)
+    must_change_password = models.BooleanField("Debe cambiar contraseña", default=False)
     
     # Multi-tenancy
     store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='users', null=True, blank=True)

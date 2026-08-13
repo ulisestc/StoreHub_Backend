@@ -19,7 +19,8 @@ class UserCreateSerializer(BaseUserCreateSerializer):
 class StoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Store
-        fields = ('id', 'name', 'is_premium', 'max_products', 'max_users')
+        fields = ('id', 'name', 'address', 'phone', 'email', 'receipt_message', 'is_premium', 'max_products', 'max_users', 'is_setup_complete')
+        read_only_fields = ('is_premium', 'max_products', 'max_users')
 
 # para editar propio usuario /users/me/
 class CurrentUserSerializer(BaseUserSerializer):
@@ -27,8 +28,8 @@ class CurrentUserSerializer(BaseUserSerializer):
 
     class Meta(BaseUserSerializer.Meta):
         model = User
-        fields = ('id', 'email', 'first_name', 'last_name', 'role', 'is_active', 'is_staff', 'store')
-        read_only_fields = ('role', 'is_staff')
+        fields = ('id', 'email', 'first_name', 'last_name', 'role', 'is_active', 'is_staff', 'must_change_password', 'store')
+        read_only_fields = ('role', 'is_staff', 'must_change_password')
         permissionClasses = [IsAuthenticated]
 
 #para asignar administrador o vendedor /users/{id}/
@@ -36,20 +37,15 @@ class CurrentUserSerializer(BaseUserSerializer):
 class UserRoleSerializer(BaseUserSerializer):
     class Meta(BaseUserSerializer.Meta):
         model = User
-        fields = ('id', 'email', 'first_name', 'last_name', 'role', 'is_active', 'is_staff', 'store')
+        fields = ('id', 'email', 'first_name', 'last_name', 'role', 'is_active', 'is_staff', 'must_change_password', 'store')
         permissionClasses = [IsAdminUser]
 
 class EmployeeSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
-
     class Meta:
         model = User
-        fields = ('id', 'email', 'first_name', 'last_name', 'password', 'is_active')
+        fields = ('id', 'email', 'first_name', 'last_name', 'is_active')
 
     def create(self, validated_data):
-        password = validated_data.pop('password')
-        # El store, role e is_active=False se asignarán en el perform_create del ViewSet
+        # La contraseña temporal y estados se manejan en el ViewSet
         user = User(**validated_data)
-        user.set_password(password)
-        user.save()
         return user
