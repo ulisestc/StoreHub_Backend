@@ -11,6 +11,11 @@ class UserCreateSerializer(BaseUserCreateSerializer):
         model = User
         fields = ('id', 'email', 'password', 'first_name', 'last_name')
 
+    def create(self, validated_data):
+        # Los registros públicos desde la Landing Page son Administradores (Owners)
+        validated_data['role'] = 'admin'
+        return super().create(validated_data)
+
 class StoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Store

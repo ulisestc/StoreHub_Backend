@@ -150,7 +150,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es'
 
 TIME_ZONE = 'America/Mexico_City'
 
@@ -197,10 +197,11 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
 }
 
+DOMAIN = env('FRONTEND_DOMAIN', default='localhost:4200')
+SITE_NAME = 'StoreHub'
+
 DJOSER = {
     'SEND_ACTIVATION_EMAIL': True,
-    'DOMAIN': env('FRONTEND_DOMAIN', default='localhost:4200'),
-    'SITE_NAME': 'StoreHub',
     'ACTIVATION_URL': env('FRONTEND_ACTIVATION_URL', default='activate/{uid}/{token}'),
     'SERIALIZERS': {
         'user_create': 'accounts.serializers.UserCreateSerializer', #/users/
