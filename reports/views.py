@@ -65,7 +65,8 @@ from products.models import Product
 from sales.models import Sale, SaleDetail
 from django.db.models import Sum, Count
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
+from accounts.permissions import IsAdminRole
 
 # def isadmin():
 #     return lambda u: u.is_active and u.is_staff
@@ -75,7 +76,7 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated
 # @user_passes_test(isadmin())
 #BASE PARA DASHBOARD, SE DESACTIVARÁ PUESTO QUE EL DASH SERA EN EL FRONT
 class reports(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, IsAdminRole]
     def get(self, request):
         template = loader.get_template('dashboard.html')
         return HttpResponse(template.render())
@@ -84,12 +85,12 @@ class reports(APIView):
 # @login_required
 # @user_passes_test(isadmin())
 class SalesByDateReport(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, IsAdminRole]
     def get(self, request):
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
 
-        sales = Sale.objects.filter(created_at__range=[start_date, end_date])
+        sales = Sale.objects.filter(created_at__range=[start_date, end_date], store=request.user.store)
         report = sales.aggregate(
             total_ventas=Sum('total'),
             total_subtotal=Sum('subtotal'),
@@ -110,11 +111,11 @@ class SalesByDateReport(APIView):
 # @login_required
 # @user_passes_test(isadmin())
 class TopProductsReport(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, IsAdminRole]
     def get(self, request):
         threshold = request.GET.get('limit', 10)
 
-        top_products = SaleDetail.objects.values('product__name') \
+        top_products = SaleDetail.objects.filter(sale__store=request.user.store).values('product__name') \
                 .annotate(total_vendido=Sum('quantity')) \
                 .order_by('-total_vendido')[:int(threshold)]
 
@@ -130,11 +131,11 @@ class TopProductsReport(APIView):
 # @login_required
 # @user_passes_test(isadmin())
 class LowStockProductsReport(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, IsAdminRole]
     def get(self, request):
         threshold = request.GET.get('threshold', 10)
 
-        stock_bajo = Product.objects.filter(stock__lt=threshold, is_active=True).order_by('stock')
+        stock_bajo = Product.objects.filter(stock__lt=threshold, is_active=True, store=request.user.store).order_by('stock')
 
         context = {
             'low_stock_products': stock_bajo,

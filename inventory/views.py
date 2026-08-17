@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from .models import InventoryMovement
 from .serializers import InventoryMovementSerializer
 from django.db import transaction
-from rest_framework.permissions import IsAdminUser
+from accounts.permissions import IsAdminRole
 
 # Create your views here.
 class InventoryMovementViewSet(
@@ -13,9 +13,10 @@ class InventoryMovementViewSet(
     mixins.RetrieveModelMixin, #GET con ID
     viewsets.GenericViewSet
 ):
-    queryset = InventoryMovement.objects.all().order_by('-timestamp')
+    def get_queryset(self):
+        return InventoryMovement.objects.filter(product__store=self.request.user.store).order_by('-timestamp')
     serializer_class = InventoryMovementSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, IsAdminRole]
 
     def perform_create(self, serializer):
 
@@ -35,7 +36,7 @@ class InventoryMovementViewSet(
                 # operaciones
                 if movement_type == 'in':
                     product.stock += quantity
-                elif movement_type == 'out':
+                elif movement_type in ['out', 'loss']:
                     product.stock -= quantity
                 
                 product.save()

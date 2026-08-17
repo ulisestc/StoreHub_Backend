@@ -4,7 +4,7 @@ from .views import InventoryMovementViewSet
 
 router = DefaultRouter()
 
-router.register(r'inventory', InventoryMovementViewSet)
+router.register(r'inventory', InventoryMovementViewSet, basename='inventory')
 
 urlpatterns = [
     path('', include(router.urls)),
