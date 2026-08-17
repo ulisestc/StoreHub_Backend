@@ -22,8 +22,8 @@ class ProductViewSet(viewsets.ModelViewSet):
     permission_classes =  [IsAuthenticated]
 
     filter_backends = [SearchFilter, DjangoFilterBackend]
-    search_fields = ['name', 'sku', 'barcode']
-    filterset_fields = ['category', 'barcode']
+    search_fields = ['name', 'sku']
+    filterset_fields = ['category']
 
     def get_queryset(self):
         return Product.objects.filter(store=self.request.user.store)
