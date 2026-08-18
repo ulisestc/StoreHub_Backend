@@ -38,6 +38,29 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
+
+  celery:
+    build: .
+    container_name: storehub_celery
+    restart: always
+    env_file:
+      - .env
+    command: >
+      sh -c "celery -A config worker -l info"
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: storehub_redis
+    restart: always
+    ports:
+      - "6379:6379"
 
   adminer:
     image: adminer:latest

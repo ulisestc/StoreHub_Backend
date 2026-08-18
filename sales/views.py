@@ -8,6 +8,7 @@ from rest_framework import viewsets, serializers, mixins
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from .serializers import SaleSerializer, SaleDetailSerializer
+from .tasks import send_ticket_email
 from decimal import Decimal 
 
 class SaleViewSet(
@@ -45,11 +46,13 @@ class SaleViewSet(
                 sale_details_to_create = []
 
                 for detail_data in details_data:
-                    #se va sumando el subtotal y 
-                    subtotal_sale += detail_data['product'].price * detail_data['quantity']
                     product = detail_data['product']
                     quantity = detail_data['quantity']      
                     price_at_sale = product.price
+
+                    # OXXO model: Product price already includes VAT.
+                    item_total = price_at_sale * quantity
+                    total_sale += item_total
 
                     # Actualiza el stock del producto
                     product.stock -= quantity
@@ -64,9 +67,10 @@ class SaleViewSet(
                         )
                     )
 
-                # Calcula impuestos y total
-                impuestos_sale = subtotal_sale * impuestos
-                total_sale = subtotal_sale + impuestos_sale
+                # Calcula subtotal e impuestos (16% IVA) extraídos del total
+                # Formula: Total = Subtotal * 1.16 => Subtotal = Total / 1.16
+                subtotal_sale = total_sale / Decimal('1.16')
+                impuestos_sale = total_sale - subtotal_sale
 
                 #Instancia la venta con todo y detalles
                 sale = serializer.save(user=self.request.user, store=self.request.user.store, total=total_sale, subtotal = subtotal_sale, impuestos=impuestos_sale)
@@ -76,41 +80,20 @@ class SaleViewSet(
                 
                 SaleDetail.objects.bulk_create(sale_details_to_create)
 
-            # Envío de Ticket por Correo (Fuera de la transacción para asegurar que ya se guardó)
-            if sale.client and sale.client.email:
-                from django.core.mail import send_mail
-                from django.conf import settings
-                
-                asunto = f"Tu Ticket de Compra en StoreHub - Venta #{sale.id}"
-                
-                # Construir el detalle
-                detalles_texto = ""
-                for detail in sale_details_to_create:
-                    detalles_texto += f"- {detail.quantity}x {detail.product.name} = ${detail.quantity * detail.price_at_sale}\n"
-                
-                mensaje = (
-                    f"¡Hola {sale.client.name}!\n\n"
-                    f"Gracias por tu compra. Aquí tienes el resumen de tu ticket:\n\n"
-                    f"{detalles_texto}\n"
-                    f"Subtotal: ${sale.subtotal}\n"
-                    f"Impuestos (IVA): ${sale.impuestos}\n"
-                    f"Total Pagado: ${sale.total}\n\n"
-                    f"¡Esperamos verte pronto!\n"
-                )
-                
-                try:
-                    send_mail(
-                        asunto,
-                        mensaje,
-                        settings.EMAIL_HOST_USER,
-                        [sale.client.email],
-                        fail_silently=True,
-                    )
-                except Exception as mail_error:
-                    print(f"No se pudo enviar el correo: {mail_error}")
+            # Envío de Ticket por Correo de forma asíncrona usando Celery
+            send_ticket_email.delay(sale.id)
 
         except Exception as e:
             raise serializers.ValidationError(f"Error al crear la venta: {str(e)}")
+
+    @action(detail=True, methods=['post'], url_path='send-ticket')
+    def send_ticket(self, request, pk=None):
+        sale = self.get_object()
+        email_to = request.data.get('email')
+        
+        # Como es a demanda desde el historial, lo enviamos asíncrono también
+        send_ticket_email.delay(sale.id, email_to=email_to)
+        return Response({"message": "El correo está en proceso de envío."}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], url_path='bulk-sync')
     def bulk_sync(self, request):
