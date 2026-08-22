@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'products',
     'sales',
     'reports',
+    'analytics',
     'rest_framework',
     'rest_framework_simplejwt',
     'djoser',
@@ -250,3 +251,7 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
+
+# DeepSeek AI Configuration
+DEEPSEEK_API_KEY = env('DEEPSEEK_API_KEY', default='')
+DEEPSEEK_BASE_URL = env('DEEPSEEK_BASE_URL', default='https://api.deepseek.com')
