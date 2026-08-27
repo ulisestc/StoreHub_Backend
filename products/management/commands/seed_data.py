@@ -1,5 +1,7 @@
 from decimal import Decimal
 import random
+from datetime import timedelta
+from django.utils import timezone
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.db import transaction
@@ -16,7 +18,7 @@ class Command(BaseCommand):
     help = 'Pobla la base de datos con datos realistas para pruebas y demostraciones en la Feria de Proyectos FCC BUAP 2036.'
 
     def handle(self, *args, **kwargs):
-        self.stdout.write(self.style.SUCCESS('🌱 Iniciando carga de datos iniciales (seed_data)...'))
+        self.stdout.write(self.style.SUCCESS('🌱 Iniciando carga de datos iniciales (Mini Súper)...'))
 
         with transaction.atomic():
             # 1. Crear Usuarios de prueba (Admin y Vendedor) y Tienda
@@ -39,16 +41,18 @@ class Command(BaseCommand):
             store = admin_user.store
             
             if not store:
-                store = Store.objects.create(name=f"Tienda de {admin_user.first_name}")
+                store = Store.objects.create(name=f"Mini Súper de {admin_user.first_name}")
                 admin_user.store = store
                 admin_user.save()
+            else:
+                store.name = "Mini Súper San José"
             
             # Convertir a Premium
             store.is_premium = True
             store.max_products = 5000
             store.save()
                     
-            self.stdout.write(self.style.SUCCESS('  [+] Usuario Admin creado y Tienda asignada: admin@storehub.com / admin12345 (PREMIUM)'))
+            self.stdout.write(self.style.SUCCESS('  [+] Usuario Admin y Tienda Premium: admin@storehub.com / admin12345'))
 
             seller_user, created_seller = User.objects.get_or_create(
                 email='vendedor@storehub.com',
@@ -63,22 +67,29 @@ class Command(BaseCommand):
             if created_seller:
                 seller_user.set_password('seller12345')
                 seller_user.save()
-                self.stdout.write(self.style.SUCCESS('  [+] Usuario Vendedor creado: vendedor@storehub.com / seller12345'))
+                self.stdout.write(self.style.SUCCESS('  [+] Usuario Vendedor: vendedor@storehub.com / seller12345'))
+
+            # Limpiar datos previos si existen (para evitar duplicados al correr multiples veces)
+            Category.objects.filter(store=store).delete()
+            Product.objects.filter(store=store).delete()
+            Client.objects.filter(store=store).delete()
+            Sale.objects.filter(store=store).delete()
 
             # 2. Crear Categorías
             categories_data = [
-                {'name': 'Electrónica y Cómputo', 'description': 'Dispositivos electrónicos, accesorios y periféricos'},
-                {'name': 'Papelería y Oficina', 'description': 'Artículos escolares, de oficina y suministros'},
-                {'name': 'Abarrotes y Bebidas', 'description': 'Productos alimenticios, refrescos y botanas'},
-                {'name': 'Accesorios y Moda', 'description': 'Artículos de vestimenta, mochilas y accesorios'}
+                {'name': 'Bebidas y Licores', 'description': 'Refrescos, jugos, cervezas y licores'},
+                {'name': 'Botanas y Dulces', 'description': 'Frituras, galletas, chocolates y dulces'},
+                {'name': 'Lácteos y Refrigerados', 'description': 'Leche, quesos, yogur y embutidos'},
+                {'name': 'Abarrotes Básicos', 'description': 'Arroz, frijol, aceite, enlatados'},
+                {'name': 'Cuidado Personal', 'description': 'Jabón, shampoo, papel higiénico'}
             ]
 
             category_objs = {}
             for cat_info in categories_data:
-                cat, _ = Category.objects.get_or_create(
+                cat = Category.objects.create(
                     store=store,
                     name=cat_info['name'],
-                    defaults={'description': cat_info['description']}
+                    description=cat_info['description']
                 )
                 category_objs[cat.name] = cat
 
@@ -86,103 +97,126 @@ class Command(BaseCommand):
 
             # 3. Crear Productos
             products_data = [
-                {'name': 'Laptop Lenovo IdeaPad 15"', 'sku': 'ELE-001', 'price': '12999.00', 'cost_price': '9500.00', 'stock': 15, 'cat': 'Electrónica y Cómputo', 'desc': 'Intel Core i5, 16GB RAM, 512GB SSD'},
-                {'name': 'Mouse Inalámbrico Logitech M185', 'sku': 'ELE-002', 'price': '299.00', 'cost_price': '180.00', 'stock': 50, 'cat': 'Electrónica y Cómputo', 'desc': 'Conexión 2.4GHz USB nanorreceptor'},
-                {'name': 'Teclado Mecánico RGB Redragon', 'sku': 'ELE-003', 'price': '899.00', 'cost_price': '550.00', 'stock': 25, 'cat': 'Electrónica y Cómputo', 'desc': 'Switches Red silenciosos, iluminación RGB'},
-                {'name': 'Audífonos Bluetooth Sony WH-CH520', 'sku': 'ELE-004', 'price': '1199.00', 'cost_price': '750.00', 'stock': 20, 'cat': 'Electrónica y Cómputo', 'desc': 'Hasta 50h de batería, micrófono integrado'},
-                {'name': 'Monitor LG 24" Full HD 75Hz', 'sku': 'ELE-005', 'price': '2499.00', 'cost_price': '1700.00', 'stock': 8, 'cat': 'Electrónica y Cómputo', 'desc': 'Panel IPS, HDMI y VGA'},
+                {'name': 'Coca Cola Retornable 2.5L', 'sku': 'BEB-001', 'price': '38.00', 'cost_price': '28.00', 'stock': 45, 'cat': 'Bebidas y Licores', 'desc': 'Refresco de cola'},
+                {'name': 'Cerveza Victoria Lata 355ml', 'sku': 'BEB-002', 'price': '22.00', 'cost_price': '15.00', 'stock': 120, 'cat': 'Bebidas y Licores', 'desc': 'Cerveza clara'},
+                {'name': 'Jugo Jumex Durazno 1L', 'sku': 'BEB-003', 'price': '25.00', 'cost_price': '18.00', 'stock': 30, 'cat': 'Bebidas y Licores', 'desc': 'Jugo de fruta'},
+                
+                {'name': 'Sabritas Sal 170g', 'sku': 'BOT-001', 'price': '42.00', 'cost_price': '29.00', 'stock': 25, 'cat': 'Botanas y Dulces', 'desc': 'Papas fritas tamaño familiar'},
+                {'name': 'Galletas Chokis 76g', 'sku': 'BOT-002', 'price': '18.00', 'cost_price': '12.00', 'stock': 50, 'cat': 'Botanas y Dulces', 'desc': 'Galletas con chispas de chocolate'},
+                
+                {'name': 'Leche Santa Clara Entera 1L', 'sku': 'LAC-001', 'price': '28.00', 'cost_price': '21.00', 'stock': 40, 'cat': 'Lácteos y Refrigerados', 'desc': 'Leche de vaca'},
+                {'name': 'Queso Panela Fud 400g', 'sku': 'LAC-002', 'price': '65.00', 'cost_price': '45.00', 'stock': 15, 'cat': 'Lácteos y Refrigerados', 'desc': 'Queso fresco'},
+                {'name': 'Jamón de Pavo Fud 250g', 'sku': 'LAC-003', 'price': '48.00', 'cost_price': '35.00', 'stock': 20, 'cat': 'Lácteos y Refrigerados', 'desc': 'Rebanado'},
 
-                {'name': 'Cuaderno Profesional Scribe 100h', 'sku': 'PAP-001', 'price': '45.00', 'cost_price': '25.00', 'stock': 120, 'cat': 'Papelería y Oficina', 'desc': 'Pasta dura, cuadro chico'},
-                {'name': 'Caja de Plumas Bic Azul 12 pzs', 'sku': 'PAP-002', 'price': '78.00', 'cost_price': '45.00', 'stock': 80, 'cat': 'Papelería y Oficina', 'desc': 'Punto mediano 1.0mm'},
-                {'name': 'Paquete Hojas Blancas Carta 500h', 'sku': 'PAP-003', 'price': '115.00', 'cost_price': '75.00', 'stock': 40, 'cat': 'Papelería y Oficina', 'desc': 'Papel bond 75g/m2'},
-                {'name': 'Mochila Escolar Impermeable BUAP', 'sku': 'PAP-004', 'price': '450.00', 'cost_price': '250.00', 'stock': 5, 'cat': 'Papelería y Oficina', 'desc': 'Compartimento para laptop 15.6"'},
+                {'name': 'Aceite Nutrioli 946ml', 'sku': 'ABA-001', 'price': '52.00', 'cost_price': '38.00', 'stock': 35, 'cat': 'Abarrotes Básicos', 'desc': 'Aceite vegetal puro de soya'},
+                {'name': 'Arroz Verde Valle 1Kg', 'sku': 'ABA-002', 'price': '38.00', 'cost_price': '26.00', 'stock': 50, 'cat': 'Abarrotes Básicos', 'desc': 'Arroz súper extra'},
+                {'name': 'Frijol Pinto Verde Valle 900g', 'sku': 'ABA-003', 'price': '45.00', 'cost_price': '31.00', 'stock': 60, 'cat': 'Abarrotes Básicos', 'desc': 'Frijol pinto limpio'},
 
-                {'name': 'Café Soluble Nescafé Clásico 200g', 'sku': 'ABA-001', 'price': '110.00', 'cost_price': '78.00', 'stock': 60, 'cat': 'Abarrotes y Bebidas', 'desc': 'Café 100% puro soluble'},
-                {'name': 'Agua Embotellada Ciel 1.5L', 'sku': 'ABA-002', 'price': '18.00', 'cost_price': '9.00', 'stock': 150, 'cat': 'Abarrotes y Bebidas', 'desc': 'Agua purificada sin gas'},
-                {'name': 'Galletas Emperador Chocolate 109g', 'sku': 'ABA-003', 'price': '22.00', 'cost_price': '13.00', 'stock': 90, 'cat': 'Abarrotes y Bebidas', 'desc': 'Galletas rellenas sabor chocolate'},
-
-                {'name': 'Termo Acero Inoxidable 800ml', 'sku': 'ACC-001', 'price': '280.00', 'cost_price': '140.00', 'stock': 30, 'cat': 'Accesorios y Moda', 'desc': 'Conserva bebidas frías y calientes 12h'},
-                {'name': 'Llavero Conmemorativo FCC BUAP', 'sku': 'ACC-002', 'price': '60.00', 'cost_price': '20.00', 'stock': 200, 'cat': 'Accesorios y Moda', 'desc': 'Edición especial Feria de Proyectos 2036'}
+                {'name': 'Papel Higiénico Pétalo 4 Rollos', 'sku': 'CUI-001', 'price': '35.00', 'cost_price': '22.00', 'stock': 80, 'cat': 'Cuidado Personal', 'desc': 'Papel higiénico hoja doble'},
+                {'name': 'Shampoo Head & Shoulders 375ml', 'sku': 'CUI-002', 'price': '85.00', 'cost_price': '55.00', 'stock': 20, 'cat': 'Cuidado Personal', 'desc': 'Shampoo limpieza profunda'}
             ]
 
             product_objs = []
             for p in products_data:
-                prod, _ = Product.objects.get_or_create(
+                prod = Product.objects.create(
                     store=store,
                     sku=p['sku'],
-                    defaults={
-                        'name': p['name'],
-                        'price': Decimal(p['price']),
-                        'cost_price': Decimal(p['cost_price']),
-                        'stock': p['stock'],
-                        'category': category_objs[p['cat']],
-                        'description': p['desc'],
-                        'is_active': True
-                    }
+                    name=p['name'],
+                    price=Decimal(p['price']),
+                    cost_price=Decimal(p['cost_price']),
+                    stock=p['stock'],
+                    category=category_objs[p['cat']],
+                    description=p['desc'],
+                    is_active=True
                 )
                 product_objs.append(prod)
 
-            self.stdout.write(self.style.SUCCESS(f'  [+] {len(product_objs)} Productos creados/verificados.'))
+            self.stdout.write(self.style.SUCCESS(f'  [+] {len(product_objs)} Productos creados.'))
 
             # 4. Crear Clientes
             clients_data = [
-                {'name': 'Juan Pérez Gómez', 'email': 'juan.perez@gmail.com', 'phone': '2221234567'},
-                {'name': 'María Fernanda López', 'email': 'mafer.lopez@outlook.com', 'phone': '2227654321'},
-                {'name': 'Laboratorio de Cómputo FCC BUAP', 'email': 'lab.computo@buap.mx', 'phone': '2222295500'},
-                {'name': 'Roberto Sánchez Ruiz', 'email': 'roberto.sanchez@yahoo.com', 'phone': '2223334455'}
+                {'name': 'Doña Rosa (Vecina)', 'email': 'rosa.vecina@gmail.com', 'phone': '2221112233'},
+                {'name': 'Taller Mecánico El Tuercas', 'email': 'taller@hotmail.com', 'phone': '2224445566'},
+                {'name': 'Escuela Primaria Morelos', 'email': 'primaria.morelos@sep.gob.mx', 'phone': '2229998877'}
             ]
 
             client_objs = []
             for c in clients_data:
-                client, _ = Client.objects.get_or_create(
+                client = Client.objects.create(
                     store=store,
+                    name=c['name'],
                     email=c['email'],
-                    defaults={'name': c['name'], 'phone': c['phone']}
+                    phone=c['phone']
                 )
                 client_objs.append(client)
 
             self.stdout.write(self.style.SUCCESS(f'  [+] {len(client_objs)} Clientes creados.'))
 
-            # 5. Crear Movimientos de Inventario Iniciales
-            for prod in product_objs[:5]:
-                InventoryMovement.objects.get_or_create(
-                    product=prod,
-                    type='in',
-                    quantity=prod.stock,
-                    user=admin_user
-                )
+            # 5. Generar 30 días de ventas para alimentar el BI y el Chatbot
+            now = timezone.now()
+            total_ventas_creadas = 0
+            
+            for i in range(30):
+                # Calcular la fecha hacia atrás
+                current_date = now - timedelta(days=29 - i)
+                
+                # Crear entre 5 y 15 ventas por día
+                num_sales_today = random.randint(5, 15)
+                
+                # Simular picos de venta los fines de semana
+                if current_date.weekday() >= 5: # Sábado o Domingo
+                    num_sales_today += random.randint(5, 10)
+                
+                for j in range(num_sales_today):
+                    # Hora aleatoria entre las 8:00 AM y las 9:00 PM
+                    sale_time = current_date.replace(hour=random.randint(8, 20), minute=random.randint(0, 59))
+                    
+                    # 40% de las ventas son a clientes frecuentes (Lealtad), 60% público en general
+                    client = random.choice(client_objs) if random.random() < 0.4 else None
+                    
+                    # Entre 1 y 5 productos por venta (UPT - Units Per Transaction)
+                    num_items = random.randint(1, 5)
+                    selected_products = random.sample(product_objs, num_items)
+                    
+                    subtotal = Decimal('0.00')
+                    sale_details = []
+                    
+                    for prod in selected_products:
+                        qty = random.randint(1, 3)
+                        price = prod.price
+                        subtotal += (price * qty)
+                        sale_details.append({
+                            'product': prod,
+                            'quantity': qty,
+                            'price_at_sale': price
+                        })
+                        
+                    tax = subtotal * Decimal('0.16')
+                    total = subtotal + tax
+                    
+                    sale = Sale.objects.create(
+                        store=store,
+                        user=random.choice([admin_user, seller_user]),
+                        client=client,
+                        subtotal=subtotal,
+                        impuestos=tax,
+                        total=total,
+                    )
+                    
+                    # Hack: Modificar la fecha de creación manualmente ignorando auto_now_add
+                    Sale.objects.filter(id=sale.id).update(created_at=sale_time)
+                    
+                    for detail in sale_details:
+                        SaleDetail.objects.create(
+                            sale=sale,
+                            product=detail['product'],
+                            quantity=detail['quantity'],
+                            price_at_sale=detail['price_at_sale']
+                        )
+                        
+                    total_ventas_creadas += 1
 
-            # 6. Crear Ventas de Ejemplo
-            if Sale.objects.filter(store=store).count() == 0:
-                sale1_subtotal = Decimal('299.00') + Decimal('899.00')
-                sale1_tax = sale1_subtotal * Decimal('0.16')
-                sale1_total = sale1_subtotal + sale1_tax
+            self.stdout.write(self.style.SUCCESS(f'  [+] {total_ventas_creadas} Ventas generadas en los últimos 30 días.'))
 
-                sale1 = Sale.objects.create(
-                    store=store,
-                    user=seller_user,
-                    client=client_objs[0],
-                    subtotal=sale1_subtotal,
-                    impuestos=sale1_tax,
-                    total=sale1_total
-                )
-                SaleDetail.objects.create(sale=sale1, product=product_objs[1], quantity=1, price_at_sale=Decimal('299.00'))
-                SaleDetail.objects.create(sale=sale1, product=product_objs[2], quantity=1, price_at_sale=Decimal('899.00'))
+        self.stdout.write(self.style.SUCCESS('🎉 ¡Carga de datos (Mini Súper) completada exitosamente!'))
 
-                sale2_subtotal = Decimal('12999.00')
-                sale2_tax = sale2_subtotal * Decimal('0.16')
-                sale2_total = sale2_subtotal + sale2_tax
-
-                sale2 = Sale.objects.create(
-                    store=store,
-                    user=admin_user,
-                    client=client_objs[2],
-                    subtotal=sale2_subtotal,
-                    impuestos=sale2_tax,
-                    total=sale2_total
-                )
-                SaleDetail.objects.create(sale=sale2, product=product_objs[0], quantity=1, price_at_sale=Decimal('12999.00'))
-
-                self.stdout.write(self.style.SUCCESS('  [+] Ventas de prueba e historial generados con éxito.'))
-
-        self.stdout.write(self.style.SUCCESS('🎉 ¡Carga de datos iniciales (seed_data) completada exitosamente!'))
