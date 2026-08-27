@@ -29,6 +29,26 @@ class ChatbotView(APIView):
         sales_7d_count = sales_7d['count'] or 0
         sales_7d_total = sales_7d['total'] or 0.0
         
+        # Sales last 30 days
+        sales_30d = Sale.objects.filter(store=store, created_at__gte=last_30_days)
+        sales_30d_agg = sales_30d.aggregate(count=Count('id'), total=Sum('total'))
+        sales_30d_count = sales_30d_agg['count'] or 0
+        sales_30d_total = sales_30d_agg['total'] or 0.0
+        
+        # Nuevos KPIs
+        atv = (sales_30d_total / sales_30d_count) if sales_30d_count > 0 else 0.0
+        
+        total_items_sold_30d = SaleDetail.objects.filter(sale__in=sales_30d).aggregate(total=Sum('quantity'))['total'] or 0
+        upt = (total_items_sold_30d / sales_30d_count) if sales_30d_count > 0 else 0.0
+        
+        sales_with_client_30d = sales_30d.filter(client__isnull=False).count()
+        loyalty_rate = (sales_with_client_30d / sales_30d_count * 100) if sales_30d_count > 0 else 0.0
+        
+        inventory_value_agg = Product.objects.filter(store=store, is_active=True).aggregate(
+            val=Sum(F('stock') * F('cost_price'), output_field=Decimal()) # pylint: disable=all
+        )
+        inventory_value = inventory_value_agg['val'] or 0.0
+        
         # Sales today
         sales_today = Sale.objects.filter(store=store, created_at__date=today).aggregate(
             count=Count('id'), total=Sum('total')
@@ -61,6 +81,8 @@ class ChatbotView(APIView):
         
         context = (
             f"- **Tienda:** {store.name}\n"
+            f"- **Capital Inmovilizado (Inventario):** ${inventory_value}\n"
+            f"- **Métricas 30 días:** ATV (Ticket Promedio): ${atv:.2f}, UPT (Unidades/Transacción): {upt:.1f}, Tasa de Lealtad: {loyalty_rate:.1f}%\n"
             f"- **Ventas hoy:** {sales_today_count} ventas (${sales_today_total})\n"
             f"- **Ventas 7 días:** {sales_7d_count} ventas (${sales_7d_total})\n"
             f"- **Top 5 más vendidos (30 días):** {top_products_list}\n"
@@ -82,11 +104,11 @@ class ChatbotView(APIView):
         context_data = self.build_store_context(store)
         
         system_prompt = (
-            f"Eres 'StoreHub AI', un Asesor Financiero y Analista de Negocios de alto nivel para la tienda '{store.name}'. "
-            "Tu misión es ayudar al dueño a maximizar sus ganancias, optimizar su inventario y tomar decisiones basadas en datos. "
-            "Habla con un tono profesional, experto pero alentador (como un consultor de Silicon Valley). "
+            f"Eres 'StoreHub AI', un Asesor Financiero y Analista de Crédito (Alternative Credit Scoring) para la tienda '{store.name}'. "
+            "Tu misión es ayudar al dueño a formalizarse, maximizar sus ganancias, demostrar su capacidad crediticia y optimizar su inventario basado en datos. "
+            "Habla con un tono profesional, experto pero alentador (como un consultor financiero de Silicon Valley y experto en Fintech). "
             "**REGLA CRÍTICA:** Siempre formatea tus respuestas utilizando Markdown (usa negritas, listas con viñetas `*` y tablas si es necesario) para que sea visualmente impecable. "
-            "Analiza los siguientes datos en tiempo real para dar tus recomendaciones. Si te preguntan algo fuera del negocio, amablemente redirige la conversación al rendimiento de la tienda.\n\n"
+            "Analiza los siguientes datos financieros y operativos reales para dar tus recomendaciones (incluyendo ATV, UPT, Capital Inmovilizado y Tasa de Lealtad). Si te preguntan algo fuera del negocio, amablemente redirige la conversación al rendimiento de la tienda o a temas financieros.\n\n"
             f"**Datos actuales del negocio:**\n{context_data}"
         )
         

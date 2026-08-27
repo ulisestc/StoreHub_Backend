@@ -43,3 +43,29 @@ class SaleSerializer(serializers.ModelSerializer):
             'details',
         ]
         read_only_fields = ['subtotal','impuestos','total', 'created_at', 'user', 'client_name']
+
+from .models import CashRegisterSession
+
+class CashRegisterSessionSerializer(serializers.ModelSerializer):
+    opened_by_name = serializers.CharField(source='opened_by.get_full_name', read_only=True)
+    closed_by_name = serializers.CharField(source='closed_by.get_full_name', read_only=True)
+
+    class Meta:
+        model = CashRegisterSession
+        fields = [
+            'id',
+            'store',
+            'opened_by',
+            'opened_by_name',
+            'closed_by',
+            'closed_by_name',
+            'opening_balance',
+            'expected_closing_balance',
+            'actual_closing_balance',
+            'opened_at',
+            'closed_at',
+            'notes',
+            'is_open',
+            'discrepancy'
+        ]
+        read_only_fields = ['store', 'opened_by', 'closed_by', 'opened_at', 'closed_at', 'expected_closing_balance']

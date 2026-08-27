@@ -132,3 +132,97 @@ class SaleViewSet(
             "errors": errors,
             "created_sales": [s.get('id') for s in created_sales]
         }, status=status.HTTP_207_MULTI_STATUS if errors else status.HTTP_201_CREATED)
+
+from .models import CashRegisterSession
+from .serializers import CashRegisterSessionSerializer
+from django.utils import timezone
+from django.db.models import Sum
+
+class CashRegisterSessionViewSet(viewsets.ModelViewSet):
+    serializer_class = CashRegisterSessionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return CashRegisterSession.objects.filter(store=self.request.user.store).order_by('-opened_at')
+
+    @action(detail=False, methods=['post'], url_path='open')
+    def open_session(self, request):
+        store = request.user.store
+        
+        # Check if there's already an open session
+        open_session = CashRegisterSession.objects.filter(store=store, closed_at__isnull=True).first()
+        if open_session:
+            return Response({"error": "Ya existe un turno de caja abierto."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        opening_balance = request.data.get('opening_balance')
+        if opening_balance is None:
+            return Response({"error": "opening_balance es requerido."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        session = CashRegisterSession.objects.create(
+            store=store,
+            opened_by=request.user,
+            opening_balance=opening_balance,
+            notes=request.data.get('notes', '')
+        )
+        serializer = self.get_serializer(session)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'], url_path='current')
+    def current_session(self, request):
+        store = request.user.store
+        session = CashRegisterSession.objects.filter(store=store, closed_at__isnull=True).first()
+        
+        if not session:
+            return Response({"message": "No hay turnos abiertos actualmente.", "session": None}, status=status.HTTP_200_OK)
+            
+        # Calculate expected closing balance
+        # Sum of sales (cash) during the session. For now we assume all sales are cash.
+        sales_total = Sale.objects.filter(
+            store=store, 
+            created_at__gte=session.opened_at
+        ).aggregate(total=Sum('total'))['total'] or Decimal('0.0')
+        
+        expected = session.opening_balance + sales_total
+        session.expected_closing_balance = expected
+        session.save(update_fields=['expected_closing_balance'])
+        
+        serializer = self.get_serializer(session)
+        return Response({"session": serializer.data}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], url_path='close')
+    def close_session(self, request, pk=None):
+        session = self.get_object()
+        
+        if session.closed_at is not None:
+            return Response({"error": "Este turno de caja ya fue cerrado."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        actual_closing_balance = request.data.get('actual_closing_balance')
+        if actual_closing_balance is None:
+            return Response({"error": "actual_closing_balance es requerido."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            actual_closing_balance = Decimal(str(actual_closing_balance))
+        except (ValueError, TypeError, Decimal.InvalidOperation):
+            return Response({"error": "actual_closing_balance debe ser un número válido."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Recalculate expected just to be sure
+        sales_total = Sale.objects.filter(
+            store=session.store, 
+            created_at__gte=session.opened_at
+        ).aggregate(total=Sum('total'))['total'] or Decimal('0.0')
+        
+        expected = session.opening_balance + sales_total
+        
+        session.expected_closing_balance = expected
+        session.actual_closing_balance = actual_closing_balance
+        session.closed_by = request.user
+        session.closed_at = timezone.now()
+        
+        notes = request.data.get('notes')
+        if notes:
+            session.notes = f"{session.notes}\nCierre: {notes}" if session.notes else f"Cierre: {notes}"
+            
+        session.save()
+        
+        serializer = self.get_serializer(session)
+        return Response(serializer.data, status=status.HTTP_200_OK)
