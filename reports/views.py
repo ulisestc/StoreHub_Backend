@@ -112,3 +112,167 @@ class SalesHeatmapReport(APIView):
             
         return Response(list(heatmap))
 
+        return Response(list(heatmap))
+
+import math
+from collections import defaultdict
+from itertools import combinations
+from datetime import timedelta
+from django.utils import timezone
+
+class MarketBasketReport(APIView):
+    """
+    Algoritmo Apriori Simplificado (Market Basket Analysis)
+    Encuentra qué productos se compran juntos frecuentemente.
+    """
+    permission_classes = [IsAuthenticated, IsAdminRole]
+
+    def get(self, request):
+        # 1. Obtener todas las ventas y sus productos
+        # limitamos a los últimos 30 o 90 días para rendimiento en tiendas grandes
+        days_ago = timezone.now() - timedelta(days=90)
+        sales_data = SaleDetail.objects.filter(sale__store=request.user.store, sale__created_at__gte=days_ago)\
+                                       .values_list('sale_id', 'product__name')
+        
+        # Agrupar productos por venta
+        transactions = defaultdict(set)
+        product_counts = defaultdict(int)
+        
+        for sale_id, product_name in sales_data:
+            transactions[sale_id].add(product_name)
+
+        total_transactions = len(transactions)
+        if total_transactions == 0:
+            return Response([])
+
+        # Contar pares (A, B) y frecuencias individuales
+        pair_counts = defaultdict(int)
+        
+        for sale_id, products in transactions.items():
+            for p in products:
+                product_counts[p] += 1
+            
+            # Combinaciones de pares en esta transacción
+            for pair in combinations(sorted(products), 2):
+                pair_counts[pair] += 1
+
+        # Calcular métricas de asociación
+        rules = []
+        for (p1, p2), count in pair_counts.items():
+            if count < 2:  # Ignorar si solo pasó 1 vez
+                continue
+                
+            support = count / total_transactions
+            
+            # Confianza: Probabilidad de comprar p2 dado p1
+            confidence_p1_to_p2 = count / product_counts[p1]
+            
+            # Confianza: Probabilidad de comprar p1 dado p2
+            confidence_p2_to_p1 = count / product_counts[p2]
+            
+            rules.append({
+                'product_a': p1,
+                'product_b': p2,
+                'times_bought_together': count,
+                'support_percent': round(support * 100, 2),
+                'confidence_a_to_b': round(confidence_p1_to_p2 * 100, 2),
+                'confidence_b_to_a': round(confidence_p2_to_p1 * 100, 2)
+            })
+            
+        # Ordenar por frecuencia
+        rules = sorted(rules, key=lambda x: x['times_bought_together'], reverse=True)[:15]
+        return Response(rules)
+
+class SafetyStockReport(APIView):
+    """
+    Cálculo Científico del Inventario de Seguridad usando Desviación Estándar (Z-Score = 1.65 para 95%)
+    """
+    permission_classes = [IsAuthenticated, IsAdminRole]
+
+    def get(self, request):
+        days_ago = timezone.now() - timedelta(days=30)
+        
+        # Ventas agrupadas por producto y día
+        from django.db.models.functions import TruncDate
+        daily_sales = SaleDetail.objects.filter(sale__store=request.user.store, sale__created_at__gte=days_ago)\
+            .annotate(date=TruncDate('sale__created_at'))\
+            .values('product_id', 'product__name', 'product__stock', 'date')\
+            .annotate(daily_sold=Sum('quantity'))
+            
+        product_data = defaultdict(lambda: {'name': '', 'stock': 0, 'sales': []})
+        
+        for ds in daily_sales:
+            pid = ds['product_id']
+            product_data[pid]['name'] = ds['product__name']
+            product_data[pid]['stock'] = ds['product__stock']
+            product_data[pid]['sales'].append(ds['daily_sold'])
+            
+        results = []
+        lead_time = 7 # Asumimos 7 días para reabastecimiento (Lead Time)
+        z_score = 1.65 # Nivel de servicio del 95%
+        
+        for pid, data in product_data.items():
+            sales = data['sales']
+            # Rellenar con 0s para los días sin ventas dentro de los 30 días
+            while len(sales) < 30:
+                sales.append(0)
+                
+            mean = sum(sales) / len(sales)
+            variance = sum((x - mean) ** 2 for x in sales) / len(sales)
+            std_dev = math.sqrt(variance)
+            
+            safety_stock = z_score * std_dev * math.sqrt(lead_time)
+            reorder_point = (mean * lead_time) + safety_stock
+            
+            results.append({
+                'product_name': data['name'],
+                'current_stock': data['stock'],
+                'mean_daily_sales': round(mean, 2),
+                'safety_stock_recommended': math.ceil(safety_stock),
+                'reorder_point': math.ceil(reorder_point),
+                'status': 'CRITICAL' if data['stock'] <= math.ceil(reorder_point) else 'HEALTHY'
+            })
+            
+        # Devolver primero los críticos
+        results = sorted(results, key=lambda x: (x['status'] == 'HEALTHY', x['current_stock']))
+        return Response(results)
+
+class ABCAnalysisReport(APIView):
+    """
+    Análisis ABC (Principio de Pareto) para el control de Inventarios basado en el valor de ventas.
+    A = Top 80% ingresos, B = Siguiente 15%, C = Último 5%
+    """
+    permission_classes = [IsAuthenticated, IsAdminRole]
+
+    def get(self, request):
+        products = SaleDetail.objects.filter(sale__store=request.user.store)\
+            .values('product__name')\
+            .annotate(total_revenue=Sum(F('quantity') * F('price_at_sale'), output_field=FloatField()))\
+            .order_by('-total_revenue')
+            
+        total_store_revenue = sum(p['total_revenue'] for p in products)
+        if total_store_revenue == 0:
+            return Response([])
+            
+        cumulative_revenue = 0
+        results = []
+        
+        for p in products:
+            rev = p['total_revenue']
+            cumulative_revenue += rev
+            cumulative_percentage = (cumulative_revenue / total_store_revenue) * 100
+            
+            category = 'C'
+            if cumulative_percentage <= 80:
+                category = 'A'
+            elif cumulative_percentage <= 95:
+                category = 'B'
+                
+            results.append({
+                'product_name': p['product__name'],
+                'revenue': round(rev, 2),
+                'category': category,
+                'cumulative_percent': round(cumulative_percentage, 2)
+            })
+            
+        return Response(results)

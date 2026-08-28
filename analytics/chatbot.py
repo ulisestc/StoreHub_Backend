@@ -10,8 +10,13 @@ from sales.models import Sale, SaleDetail
 from products.models import Product
 from django.db.models import Sum, Count, Avg, F
 from django.utils import timezone
+from django.db import models
 from datetime import timedelta
-from decimal import Decimal
+from reports.views import MarketBasketReport, SafetyStockReport, ABCAnalysisReport
+
+class MockRequest:
+    def __init__(self, store):
+        self.user = type('MockUser', (), {'store': store})()
 
 class ChatbotView(APIView):
     permission_classes = [IsAuthenticated, IsAdminRole, IsPremiumStore]
@@ -45,7 +50,7 @@ class ChatbotView(APIView):
         loyalty_rate = (sales_with_client_30d / sales_30d_count * 100) if sales_30d_count > 0 else 0.0
         
         inventory_value_agg = Product.objects.filter(store=store, is_active=True).aggregate(
-            val=Sum(F('stock') * F('cost_price'), output_field=Decimal()) # pylint: disable=all
+            val=Sum(F('stock') * F('cost_price'), output_field=models.DecimalField())
         )
         inventory_value = inventory_value_agg['val'] or 0.0
         
@@ -79,6 +84,31 @@ class ChatbotView(APIView):
         active_products_count = Product.objects.filter(store=store, is_active=True).count()
         clients_count = store.clients.count() if hasattr(store, 'clients') else 0
         
+        # Premium Features Data
+        mock_req = MockRequest(store)
+        
+        # 1. Market Basket
+        basket_data = MarketBasketReport().get(mock_req).data
+        basket_str = "No hay datos de cesta de compra."
+        if basket_data:
+            basket_str = ", ".join([f"[{r['product_a']} + {r['product_b']} ({r['confidence_a_to_b']} %)]" for r in basket_data[:3]])
+            
+        # 2. Safety Stock
+        safety_data = SafetyStockReport().get(mock_req).data
+        critical_stock = [s for s in safety_data if s['status'] == 'CRITICAL']
+        safety_str = "Inventario sano."
+        if critical_stock:
+            safety_str = ", ".join([f"{s['product_name']} (Stock: {s['current_stock']}, Min: {s['reorder_point']}, Faltan {(s['current_stock']/s['mean_daily_sales'] if s['mean_daily_sales'] > 0 else 0):.0f} días)" for s in critical_stock[:3]])
+            
+        # 3. ABC Analysis
+        abc_data = ABCAnalysisReport().get(mock_req).data
+        category_a = [a['product_name'] for a in abc_data if a['category'] == 'A']
+        category_b = [b['product_name'] for b in abc_data if b['category'] == 'B']
+        category_c = [c['product_name'] for c in abc_data if c['category'] == 'C']
+        abc_str_a = ", ".join(category_a[:5]) if category_a else "N/A"
+        abc_str_b = ", ".join(category_b[:5]) if category_b else "N/A"
+        abc_str_c = ", ".join(category_c[:5]) if category_c else "N/A"
+        
         context = (
             f"- **Tienda:** {store.name}\n"
             f"- **Capital Inmovilizado (Inventario):** ${inventory_value}\n"
@@ -89,6 +119,13 @@ class ChatbotView(APIView):
             f"- **Top 3 más rentables (30 días):** {profit_products_list}\n"
             f"- **Bajo stock (<10):** {low_stock_count} productos (ej. {low_stock_names})\n"
             f"- **Total de Productos / Clientes:** {active_products_count} / {clients_count}\n"
+            f"\n**Métricas de Inteligencia Avanzada (Premium):**\n"
+            f"- **Análisis ABC (Pareto):**\n"
+            f"  * Categoría A (Top 80% ingresos - Prioridad máxima): {abc_str_a}\n"
+            f"  * Categoría B (Siguiente 15% ingresos - Mantener): {abc_str_b}\n"
+            f"  * Categoría C (Último 5% ingresos - Evaluar liquidar): {abc_str_c}\n"
+            f"- **Alertas de Inventario Estadístico (CRÍTICOS):** {safety_str}\n"
+            f"- **Cesta de Compra (Cross-Selling rules):** {basket_str}\n"
         )
         return context
 
