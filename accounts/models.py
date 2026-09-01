@@ -20,8 +20,8 @@ class Store(models.Model):
     receipt_message = models.TextField("Mensaje de ticket", blank=True, help_text="Mensaje que aparece al final de los tickets de compra.")
 
     # Límites de Cuota (Quotas)
-    max_products = models.IntegerField("Límite de productos", default=50)
-    max_users = models.IntegerField("Límite de usuarios", default=2)
+    max_products = models.IntegerField("Límite de productos", default=500)
+    max_users = models.IntegerField("Límite de usuarios", default=4)
 
     def __str__(self):
         return self.name

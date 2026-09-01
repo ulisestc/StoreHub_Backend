@@ -10,7 +10,10 @@ from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 
 from .serializers import EmployeeSerializer, StoreSerializer
 
@@ -51,11 +54,26 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         
         # Enviar correo con credenciales
         subject = 'Bienvenido a StoreHub'
-        login_url = f"http://{settings.DOMAIN}"
-        message = f'Hola {user.first_name},\n\nFuiste invitado a {store.name}.\n\nPuedes acceder al sistema desde aquí:\n{login_url}\n\nTu contraseña temporal es: {temp_password}\n\nPor seguridad, el sistema te pedirá cambiarla al iniciar sesión por primera vez.'
-        sender_email = settings.EMAIL_HOST_USER if settings.EMAIL_HOST_USER else 'no-reply@storehub.com'
-        from_email = f'"{store.name} via StoreHub" <{sender_email}>'
-        send_mail(subject, message, from_email, [user.email])
+        login_url = settings.DOMAIN if settings.DOMAIN.startswith('http') else f"http://{settings.DOMAIN}"
+
+        context = {
+            'first_name': user.first_name,
+            'store_name': store.name,
+            'login_url': login_url,
+            'temp_password': temp_password,
+        }
+        
+        html_message = render_to_string('email/invitation.html', context)
+        plain_message = strip_tags(html_message)
+        
+        send_mail(
+            subject='Bienvenido a StoreHub',
+            message=plain_message,
+            from_email=f'"{store.name} via StoreHub" <no-reply@storehub.com>',
+            recipient_list=[user.email],
+            fail_silently=False,
+            html_message=html_message,
+        )
 
     def perform_destroy(self, instance):
         if self.request.user.role != 'admin':
