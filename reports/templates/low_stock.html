@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bajo Stock</title>
+</head>
+<body>
+    <h1>Productos con Stock menor a {{threshold}}</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>id</th>
+                <th>name</th>
+                <th>sku</th>
+                <th>price</th>
+                <th>stock</th>
+                <th>is_active</th>
+                <th>category_id</th>
+                <th>cost_price</th>
+                <th>description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {%for p in low_stock_products %}
+            <tr>
+                <td>{{p.id}}</td>
+                <td>{{p.name}}</td>
+                <td>{{p.sku}}</td>
+                <td>{{p.price}}</td>
+                <td>{{p.stock}}</td>
+                <td>{{p.is_active}}</td>
+                <td>{{p.category_id}}</td>
+                <td>{{p.cost_price}}</td>
+                <td>{{p.description}}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="9">No hay productos con stock bajo.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

@@ -1,8 +1,23 @@
 from django.urls import path
-from .views import LowStockProductsReport, SalesByDateReport, TopProductsReport
+from .views import (
+    SalesByDateReport, TopProductsReport, LowStockProductsReport,
+    InventoryValueReport, SalesHeatmapReport,
+    MarketBasketReport, SafetyStockReport, ABCAnalysisReport,
+    AvailableMonthsReport
+)
+from .export_views import ExportFullReportToExcel
 
 urlpatterns = [
-    path('reports/sales-by-date/', SalesByDateReport.as_view()),
-    path('reports/top-products/', TopProductsReport.as_view()),
-    path('reports/low-stock-products/', LowStockProductsReport.as_view()),
+    path('reports/sales-by-date/', SalesByDateReport.as_view(), name='sales-by-date'),
+    path('reports/top-products/', TopProductsReport.as_view(), name='top-products'),
+    path('reports/low-stock/', LowStockProductsReport.as_view(), name='low-stock'),
+    path('reports/inventory-value/', InventoryValueReport.as_view(), name='inventory-value'),
+    path('reports/sales-heatmap/', SalesHeatmapReport.as_view(), name='sales-heatmap'),
+    path('analytics/market-basket/', MarketBasketReport.as_view(), name='market-basket'),
+    path('analytics/safety-stock/', SafetyStockReport.as_view(), name='safety-stock'),
+    path('analytics/abc-analysis/', ABCAnalysisReport.as_view(), name='abc-analysis'),
+    path('analytics/available-months/', AvailableMonthsReport.as_view(), name='available-months'),
+    
+    # Exportaciones Excel
+    path('export/full/', ExportFullReportToExcel.as_view(), name='export-full'),
 ]

@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: storehub_db
+    restart: always
+    env_file:
+      - .env
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: .
+    container_name: storehub_backend
+    restart: always
+    env_file:
+      - .env
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  celery:
+    build: .
+    container_name: storehub_celery
+    restart: always
+    env_file:
+      - .env
+    command: >
+      sh -c "celery -A config worker -l info"
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: storehub_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  adminer:
+    image: adminer:latest
+    container_name: storehub_adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+  smtp4dev:
+    image: rnwood/smtp4dev:v3
+    container_name: storehub_smtp4dev
+    restart: always
+    ports:
+      - "5000:80"     # Web UI en localhost:5000
+      - "2525:2525"   # SMTP Port
+
+volumes:
+  mysql_data:

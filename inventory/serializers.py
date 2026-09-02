@@ -19,15 +19,3 @@ class InventoryMovementSerializer(serializers.ModelSerializer):
         ]
 
         read_only_fields = ['timestamp', 'user', 'product_name'] #se asignan en la vista
-
-    def validate(self, data):
-
-        if data['quantity'] <= 0:
-            raise serializers.ValidationError("La cantidad debe ser un número positivo.")
-        
-        if data ['type'] == 'out':
-            product = data ['product']
-            quantity = data ['quantity']
-            if product.stock < quantity:
-                raise serializers.ValidationError("No hay suficiente stock para realizar esta salida.")
-        return data

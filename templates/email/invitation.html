@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'DM Sans', Roboto, Arial, sans-serif;
+            background-color: #f9f8f5;
+            background-image: url('https://storehub-two.vercel.app/fondo3.svg');
+            background-size: 700px;
+            color: rgba(0, 0, 0, 0.87);
+            margin: 0;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 4px;
+            box-shadow: 0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+        }
+        .header {
+            background-color: #0b2f6b;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12);
+            position: relative;
+            z-index: 2;
+        }
+        .header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 20px;
+            font-weight: 500;
+            letter-spacing: 0.15px;
+        }
+        .content {
+            padding: 24px;
+            background: #ffffff;
+        }
+        .greeting {
+            font-size: 24px;
+            font-weight: 400;
+            color: rgba(0, 0, 0, 0.87);
+            margin-bottom: 16px;
+            margin-top: 0;
+            letter-spacing: 0;
+        }
+        .message {
+            font-size: 16px;
+            line-height: 1.5;
+            color: rgba(0, 0, 0, 0.87);
+            margin-bottom: 24px;
+            letter-spacing: 0.15px;
+        }
+        .password-box {
+            background-color: #f5f5f5;
+            padding: 16px;
+            margin-bottom: 24px;
+            font-size: 20px;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 500;
+            color: rgba(0, 0, 0, 0.87);
+            text-align: center;
+            letter-spacing: 4px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+        }
+        .btn-container {
+            text-align: left;
+            margin-bottom: 24px;
+            margin-top: 16px;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #0b2f6b;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 0 16px;
+            line-height: 36px;
+            height: 36px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1.25px;
+            box-shadow: 0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12);
+        }
+        .btn:hover {
+            background-color: #071e47;
+            box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12);
+        }
+        .footer {
+            padding: 16px 24px;
+            text-align: left;
+            font-size: 12px;
+            color: rgba(0, 0, 0, 0.6);
+            border-top: 1px solid rgba(0, 0, 0, 0.12);
+            background: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>StoreHub</h1>
+        </div>
+        <div class="content">
+            <h2 class="greeting">¡Hola, {{ first_name }}!</h2>
+            <p class="message">
+                Has sido invitado(a) para unirte a la tienda <strong>{{ store_name }}</strong> en StoreHub.
+            </p>
+            <p class="message">
+                Esta es tu contraseña temporal para acceder al sistema:
+            </p>
+            <div class="password-box">
+                {{ temp_password }}
+            </div>
+            <p class="message" style="font-size: 14px; color: #ef4444; font-weight: 500; text-align: center;">
+                Por tu seguridad, el sistema te pedirá cambiarla al iniciar sesión por primera vez.
+            </p>
+            <div class="btn-container">
+                <a href="{{ login_url }}" class="btn">Acceder al Sistema</a>
+            </div>
+        </div>
+        <div class="footer">
+            <p>&copy; {% now "Y" %} StoreHub. Todos los derechos reservados.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,46 +1,119 @@
+<div align="center">
+  <h1>StoreHub (Backend API)</h1>
+  <p><strong>REST API Core para SaaS Multitenant y Business Intelligence</strong></p>
 
-## Plan de Implementación de Vistas
+---
 
-| Aplicación | Enfoque Recomendado | Pasos a Seguir |
-| :--- | :--- | :--- |
-| **`accounts `** | `djoser` + `simplejwt` | 1. Instalar y configurar `djoser` y `djangorestframework-simplejwt`.<br>2. `djoser` proveerá los endpoints para registro (`/users/`), gestión de perfil (`/users/me/`), etc.<br>3. `simplejwt` proveerá los endpoints para obtener/refrescar tokens (`/token/`).<br>4. `djoser` se encarga de la lógica segura, como hashear contraseñas al registrar. |
-| **`products ✅`** | `ModelViewSet` + Permisos | 1. Usar `ModelViewSet` para un CRUD rápido.<br>2. **Añadir `permission_classes = [IsAuthenticated]`** para requerir un token JWT válido en todas las peticiones.<br>3. Opcional: Usar permisos más granulares (ej. `IsAdminUser`) para acciones como `update` o `delete`. |
-| **`clients ✅`** | `ModelViewSet` + Permisos | 1. Usar `ModelViewSet` para un CRUD rápido.<br>2. **Añadir `permission_classes = [IsAuthenticated]`** para asegurar que solo usuarios autenticados puedan gestionar clientes. |
-| **`sales ✅`** | `ViewSet` personalizado + Permisos | 1. Crear un `ViewSet` que no herede de `ModelViewSet` o una `APIView`.<br>2. **Añadir `permission_classes = [IsAuthenticated]`**.<br>3. Sobrescribir el método `create()` para implementar la lógica de negocio dentro de una `transaction.atomic()`: crear la venta, sus detalles y actualizar el stock de los productos. |
-| **`inventory ✅`** | `ViewSet` personalizado + Permisos | 1. Crear un `ViewSet` (ej. `CreateModelMixin`, `ListModelMixin`).<br>2. **Añadir `permission_classes = [IsAdminUser]`** para que solo administradores puedan registrar movimientos de inventario.<br>3. Sobrescribir el método `perform_create()` para actualizar el `stock` del producto asociado después de crear el movimiento. |
+**Repositorios del Proyecto:**
 
-## Plan de Implementación de Serializadores
+- [Frontend (Cliente Angular)](https://github.com/ulisestc/StoreHub)
+- [Backend (API Django)](https://github.com/ulisestc/StoreHub_Backend) - *Estás aquí*
 
-| Aplicación | Tipo de Serializador | Razón |
-| :--- | :--- | :--- |
-| **`products ✅`** | `ModelSerializer` estándar | CRUD simple, sin lógica de negocio compleja en el serializador. |
-| **`clients ✅`** | `ModelSerializer` estándar | CRUD simple, sin lógica de negocio compleja en el serializador. |
-| **`accounts `** | Serializadores de `djoser` o personalizados | Para manejar de forma segura la creación de usuarios (hashear contraseñas) y controlar los campos expuestos. |
-| **`sales ✅ `** | `ModelSerializer` con anidación y `create()` personalizado | Para manejar la creación de objetos relacionados (detalles de venta) y la lógica de negocio en una sola transacción. |
-| **`inventory ✅`** | `ModelSerializer` estándar | La lógica de negocio principal (actualizar stock) se delega a la vista (`perform_create`), el serializador solo valida los datos. |
+> **Proyecto destacado para la Feria de Proyectos 2026**
+> Facultad de Ciencias de la Computación, Benemérita Universidad Autónoma de Puebla (BUAP).
+> *Bajo la tutela del Mtro. Luis Yael Méndez Sánchez.*
 
+---
 
-Para empezar, necesitarás instalar estas librerías:
+## Contexto e Impacto Social
 
-```bash
-pip install djangorestframework-simplejwt djoser
+En México, y específicamente en Puebla, la mayoría de los pequeños negocios operan desde la informalidad administrativa. Sin datos financieros confiables, estas microempresas no pueden crecer ni acceder a créditos bancarios, dejando a sus empleados atrapados en la precariedad.
+
+**StoreHub** se alinea con el **Objetivo de Desarrollo Sostenible (ODS) 8: Trabajo Decente y Crecimiento Económico**, proveyendo la infraestructura digital, base de datos y endpoints necesarios para que cualquier comerciante registre ventas, analice datos y genere un historial financiero sólido, de forma gratuita y escalable.
+
+---
+
+## Arquitectura y Capacidades Core
+
+Este repositorio contiene el "cerebro" detrás de la plataforma, desarrollado en **Django REST Framework** sobre **PostgreSQL**:
+
+- **Arquitectura Multitenant:** Una sola base de datos central, múltiples negocios operando en simultáneo. Acceso restringido a nivel consulta para garantizar que ninguna tienda pueda ver los datos de otra.
+- **Seguridad (RBAC y JWT):** Autenticación mediante JSON Web Tokens. Los permisos (Vendedor vs Administrador) se procesan estrictamente antes de cada transacción.
+- **Inteligencia de Negocio (BI):** Integración nativa de algoritmos estadísticos (como el *Algoritmo Apriori* para Market Basket) para predecir productos complementarios en tiempo real y calcular inventarios de seguridad.
+- **Notificaciones Asíncronas:** Envío automatizado de tickets de compra y alertas de stock bajo mediante SMTP/Brevo.
+
+```mermaid
+graph TD;
+    A[Cliente / Frontend Angular] -->|Peticiones REST| B[Django REST Framework];
+    B --> C{Routers / Autenticación};
+    C --> D[Módulo Ventas & POS];
+    C --> E[Módulo Analytics & Copilot IA];
+    C --> F[Módulo Inventario];
+    D & E & F --> G[(PostgreSQL Multitenant)];
+    B -.->|Emails| H[Servidor SMTP / Brevo];
 ```
 
-Luego, deberás configurar `djangorestframework-simplejwt` y `djoser` en tu archivo `settings.py`.
+---
 
-TODO
+## Guía de Instalación Rápida
 
-1. Arreglar superusuario (Modelo de accounts) ✅ ✅ (Manager personalizado) 
-2. Probar endpoints de products, categories (Ahora que hay auth) ✅ ✅ 
-3. Probar endopoints de clients ✅ ✅ 
-4. Crear las vistas y logica de negocio de sales e inventory ✅ ✅ 
-5. Crear la aplicación de reportes ✅ ✅ 
-6. Crear reporte de low stock ✅ ✅ 
-7. Agregar paginación global ✅ ✅ 
-8. Busqueda por nombre, código y categoría en productos ✅ ✅ 
-9. Verificar si existen / nos sirven los endpoints de djoser para accounts
+Para asegurar consistencia total en cualquier sistema operativo, este proyecto está completamente contenerizado usando **Docker**. No requieres instalar Python ni PostgreSQL localmente.
 
-storehub@gmail.com
-storehubpassword
+### 1. Preparar el Entorno
 
-https://gemini.google.com/share/4433bde9b6f7
+```bash
+git clone https://github.com/ulisestc/StoreHub_Backend.git
+cd StoreHub_Backend
+# Copiar plantilla de variables de entorno
+cp .env.example .env
+```
+
+### 2. Levantar la Infraestructura
+
+Inicia los servicios, la base de datos y el servidor local de correos con un solo comando:
+
+```bash
+docker compose up --build
+```
+
+**Servicios Activos:**
+
+- **API REST Principal:** [http://localhost:8000/api/](http://localhost:8000/api/)
+- **Buzón Local (SMTP4Dev):** [http://localhost:5000](http://localhost:5000)
+
+### 3. Cargar Datos Semilla
+
+Para probar la plataforma, puedes generar una base de datos de prueba (tiendas, inventarios, y un histórico de 3 meses de ventas):
+
+```bash
+docker compose exec backend python manage.py seed_data
+```
+
+**Cuentas generadas para pruebas:**
+
+- *Administrador:* `admin@storehub.com` / `admin12345`
+- *Cajero:* `vendedor@storehub.com` / `seller12345`
+
+---
+
+## Documentación API
+
+Toda la documentación interactiva (OpenAPI/Swagger) se genera automáticamente según los endpoints expuestos:
+
+- **Swagger UI:** [http://localhost:8000/api/docs/](http://localhost:8000/api/docs/)
+
+### Comandos de Desarrollo
+
+```bash
+# Aplicar migraciones
+docker compose exec backend python manage.py makemigrations
+docker compose exec backend python manage.py migrate
+
+# Correr Pruebas Unitarias Automáticas
+docker compose exec backend python manage.py test
+```
+
+---
+
+## Equipo Elaborador
+
+- **Aaron Ulises Torres Corte**
+- **Alfredo Escudero Rivera**
+- **Johan Yuri Martínez García**
+- **Joselyn Ramírez Lima**
+
+---
+
+<div align="center">
+  <sub>Desarrollado con alto estándar arquitectónico para escalabilidad real.</sub>
+</div>

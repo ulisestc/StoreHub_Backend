@@ -17,17 +17,6 @@ class SaleDetailSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['price_at_sale', 'product_name']
 
-    def validate(self, data):
-        product = data ['product']
-        quantity = data ['quantity']
-
-        if quantity <= 0:
-            raise serializers.ValidationError("La cantidad debe ser mayor a cero.")
-        
-        if product.stock < quantity:
-            raise serializers.ValidationError("No hay suficiente stock para el producto seleccionado.")
-        
-        return data
         
 class SaleSerializer(serializers.ModelSerializer):
     
@@ -55,9 +44,28 @@ class SaleSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['subtotal','impuestos','total', 'created_at', 'user', 'client_name']
 
-    def validate(self, data):
-        details = data.get('details', [])
-        
-        if not details:
-            raise serializers.ValidationError("La venta debe tener al menos un detalle.")
-        return data
+from .models import CashRegisterSession
+
+class CashRegisterSessionSerializer(serializers.ModelSerializer):
+    opened_by_name = serializers.CharField(source='opened_by.get_full_name', read_only=True)
+    closed_by_name = serializers.CharField(source='closed_by.get_full_name', read_only=True)
+
+    class Meta:
+        model = CashRegisterSession
+        fields = [
+            'id',
+            'store',
+            'opened_by',
+            'opened_by_name',
+            'closed_by',
+            'closed_by_name',
+            'opening_balance',
+            'expected_closing_balance',
+            'actual_closing_balance',
+            'opened_at',
+            'closed_at',
+            'notes',
+            'is_open',
+            'discrepancy'
+        ]
+        read_only_fields = ['store', 'opened_by', 'closed_by', 'opened_at', 'closed_at', 'expected_closing_balance']

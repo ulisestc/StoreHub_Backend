@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ventas por periodo</title>
+</head>
+<body>
+    <h1>Ventas de {{start_date}} a {{end_date}}</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Total</th>
+                <th>Created_at</th>
+                <th>Client_id</th>
+                <th>User_id</th>
+                <th>Impuestos</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {%for p in sales %}
+            <tr>
+                <td>{{p.id}}</td>
+                <td>{{p.total}}</td>
+                <td>{{p.created_at}}</td>
+                <td>{{p.client_id}}</td>
+                <td>{{p.user_id}}</td>
+                <td>{{p.impuestos}}</td>
+                <td>{{p.subtotal}}</td>
+            </tr>
+            <!-- <p>{{p}}</p> -->
+            {% empty %}
+            <tr><td colspan="9">No hay ventas</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p>Número de ventas: {{report.num_transacciones}}</p>
+    <p>Subtotales: {{report.total_subtotal}}</p>
+    <p>Impuestos: {{report.total_impuestos}}</p>
+    <p>Total en ventas: {{report.total_ventas}}</p>
+</body>
+</html>

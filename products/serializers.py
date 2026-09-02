@@ -5,6 +5,7 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = '__all__'
+        read_only_fields = ['store']
 
 class ProductSerializer(serializers.ModelSerializer):
     is_active = serializers.BooleanField(default=True) # para evitar que se ponga false automaticamente al crear y no tener que agregarlo ecxplicitamtne
