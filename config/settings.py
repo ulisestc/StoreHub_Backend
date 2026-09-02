@@ -85,6 +85,11 @@ else:
         'http://127.0.0.1:4200',
         'https://storehub-two.vercel.app',
     ]
+    
+    # Agregar URL dinámica desde el entorno si existe
+    frontend_url = env('FRONTEND_URL', default=None)
+    if frontend_url and frontend_url not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(frontend_url)
 
 
 ROOT_URLCONF = 'config.urls'
