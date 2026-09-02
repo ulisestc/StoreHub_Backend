@@ -152,7 +152,7 @@ class MarketBasketReport(APIView):
     Algoritmo Apriori Simplificado (Market Basket Analysis)
     Encuentra qué productos se compran juntos frecuentemente.
     """
-    permission_classes = [IsAuthenticated, IsAdminRole]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         # 1. Obtener todas las ventas y sus productos

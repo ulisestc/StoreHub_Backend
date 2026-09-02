@@ -241,7 +241,7 @@ DJOSER = {
 if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
     EMAIL_HOST = 'smtp4dev'
-    EMAIL_PORT = 2525
+    EMAIL_PORT = 25
     EMAIL_USE_TLS = False
     DEFAULT_FROM_EMAIL = 'StoreHub Local <noreply@storehub.local>'
 else:
