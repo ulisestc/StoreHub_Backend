@@ -1,5 +1,7 @@
 from django.db.models import Sum, Count, F, FloatField
 from django.db.models.functions import ExtractWeekDay, ExtractHour
+from django.utils import timezone
+import datetime
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -16,6 +18,16 @@ class SalesByDateReport(APIView):
 
         if not start_date or not end_date:
             return Response({"error": "Fechas 'start_date' y 'end_date' son requeridas (YYYY-MM-DD)"}, status=400)
+            
+        try:
+            if isinstance(start_date, str) and len(start_date) == 10:
+                start_dt = datetime.datetime.strptime(f"{start_date} 00:00:00", "%Y-%m-%d %H:%M:%S")
+                start_date = timezone.make_aware(start_dt)
+            if isinstance(end_date, str) and len(end_date) == 10:
+                end_dt = datetime.datetime.strptime(f"{end_date} 23:59:59", "%Y-%m-%d %H:%M:%S")
+                end_date = timezone.make_aware(end_dt)
+        except ValueError:
+            pass
 
         sales = Sale.objects.filter(created_at__range=[start_date, end_date], store=request.user.store)
         
@@ -53,6 +65,21 @@ class SalesByDateReport(APIView):
         }
         
         return Response(data)
+
+class AvailableMonthsReport(APIView):
+    permission_classes = [IsAuthenticated, IsAdminRole]
+
+    def get(self, request):
+        from django.db.models.functions import TruncMonth
+        
+        months = Sale.objects.filter(store=request.user.store)\
+            .annotate(month=TruncMonth('created_at'))\
+            .values('month')\
+            .annotate(count=Count('id'))\
+            .order_by('-month')
+            
+        res = [m['month'].strftime('%Y-%m') for m in months if m['month']]
+        return Response(res)
 
 class TopProductsReport(APIView):
     permission_classes = [IsAuthenticated, IsAdminRole]

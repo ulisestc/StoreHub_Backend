@@ -2,8 +2,10 @@ from django.urls import path
 from .views import (
     SalesByDateReport, TopProductsReport, LowStockProductsReport,
     InventoryValueReport, SalesHeatmapReport,
-    MarketBasketReport, SafetyStockReport, ABCAnalysisReport
+    MarketBasketReport, SafetyStockReport, ABCAnalysisReport,
+    AvailableMonthsReport
 )
+from .export_views import ExportFullReportToExcel
 
 urlpatterns = [
     path('reports/sales-by-date/', SalesByDateReport.as_view(), name='sales-by-date'),
@@ -14,4 +16,8 @@ urlpatterns = [
     path('analytics/market-basket/', MarketBasketReport.as_view(), name='market-basket'),
     path('analytics/safety-stock/', SafetyStockReport.as_view(), name='safety-stock'),
     path('analytics/abc-analysis/', ABCAnalysisReport.as_view(), name='abc-analysis'),
+    path('analytics/available-months/', AvailableMonthsReport.as_view(), name='available-months'),
+    
+    # Exportaciones Excel
+    path('export/full/', ExportFullReportToExcel.as_view(), name='export-full'),
 ]
