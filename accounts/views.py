@@ -69,7 +69,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         send_mail(
             subject='Bienvenido a StoreHub',
             message=plain_message,
-            from_email=f'"{store.name} via StoreHub" <no-reply@storehub.com>',
+            from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
             fail_silently=False,
             html_message=html_message,

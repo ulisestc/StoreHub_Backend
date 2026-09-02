@@ -61,7 +61,7 @@ def send_ticket_email(sale_id, email_to=None):
         send_mail(
             asunto,
             mensaje,
-            settings.EMAIL_HOST_USER,
+            settings.DEFAULT_FROM_EMAIL,
             [recipient_email],
             fail_silently=False,
         )
