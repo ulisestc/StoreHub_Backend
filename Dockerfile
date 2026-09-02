@@ -26,5 +26,5 @@ COPY . /app/
 # Exponer el puerto de Django
 EXPOSE 8000
 
-# Comando por defecto para iniciar el servidor de desarrollo
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Comando por defecto para iniciar el servidor en producción
+CMD ["sh", "-c", "gunicorn config.wsgi --bind 0.0.0.0:${PORT:-8000} --log-file -"]
