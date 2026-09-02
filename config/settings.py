@@ -237,13 +237,19 @@ DJOSER = {
     }
 }
 
-# Email Configuration (Brevo HTTP API)
-EMAIL_BACKEND = 'anymail.backends.brevo.EmailBackend'
-DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='StoreHub <noreply@storehub.com>')
-
-ANYMAIL = {
-    "BREVO_API_KEY": env('BREVO_API_KEY', default=''),
-}
+# Email Configuration
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp4dev'
+    EMAIL_PORT = 2525
+    EMAIL_USE_TLS = False
+    DEFAULT_FROM_EMAIL = 'StoreHub Local <noreply@storehub.local>'
+else:
+    EMAIL_BACKEND = 'anymail.backends.brevo.EmailBackend'
+    DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='StoreHub <noreply@storehub.com>')
+    ANYMAIL = {
+        "BREVO_API_KEY": env('BREVO_API_KEY', default=''),
+    }
 
 # Old SMTP Config (kept for reference if needed locally)
 # EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
