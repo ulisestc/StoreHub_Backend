@@ -15,7 +15,7 @@ class DashboardKPIView(APIView):
 
     def get(self, request):
         store = request.user.store
-        today = timezone.now().date()
+        today = timezone.localdate()
         first_day_of_month = today.replace(day=1)
         
         ventas_hoy = Sale.objects.filter(store=store, created_at__date=today)
