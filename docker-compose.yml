@@ -47,8 +47,8 @@ services:
     restart: always
     env_file:
       - .env
-    command: >
-      sh -c "celery -A config worker -l info"
+    command:
+      sh -c "celery -A config worker -l info --concurrency=1 --max-tasks-per-child=50"
     volumes:
       - .:/app
     depends_on:
