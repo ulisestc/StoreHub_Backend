@@ -19,7 +19,11 @@ class UserCreateSerializer(BaseUserCreateSerializer):
 class StoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Store
-        fields = ('id', 'name', 'address', 'phone', 'email', 'receipt_message', 'is_premium', 'max_products', 'max_users', 'is_setup_complete')
+        fields = (
+            'id', 'name', 'address', 'phone', 'email', 'receipt_message',
+            'country', 'currency_code', 'currency_symbol', 'tax_rate', 'tax_name',
+            'is_premium', 'max_products', 'max_users', 'is_setup_complete'
+        )
         read_only_fields = ('is_premium', 'max_products', 'max_users')
 
 # para editar propio usuario /users/me/

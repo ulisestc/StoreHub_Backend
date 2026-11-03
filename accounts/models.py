@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from .managers import CustomUserManager
@@ -18,6 +19,13 @@ class Store(models.Model):
     phone = models.CharField("Teléfono", max_length=20, blank=True)
     email = models.EmailField("Correo de contacto", blank=True)
     receipt_message = models.TextField("Mensaje de ticket", blank=True, help_text="Mensaje que aparece al final de los tickets de compra.")
+
+    # Configuración Regional y Fiscal
+    country = models.CharField("País", max_length=50, default='Colombia')
+    currency_code = models.CharField("Código de Moneda", max_length=5, default='COP')
+    currency_symbol = models.CharField("Símbolo de Moneda", max_length=5, default='$')
+    tax_rate = models.DecimalField("Tasa de Impuesto", max_digits=5, decimal_places=4, default=Decimal('0.1900'))
+    tax_name = models.CharField("Nombre del Impuesto", max_length=20, default='IVA')
 
     # Límites de Cuota (Quotas)
     max_products = models.IntegerField("Límite de productos", default=500)
