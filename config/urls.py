@@ -19,6 +19,7 @@ urlpatterns = [
     path('api/', include('sales.urls')),    # /sales
     path('api/', include('reports.urls')),  # /reports
     path('api/', include('analytics.urls')),# /analytics
+    path('api/expenses/', include('expenses.urls')), # /expenses
 
     # Endpoints de autenticación y gestión de empleados
     path('api/', include('accounts.urls')),    # /employees

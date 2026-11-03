@@ -28,19 +28,47 @@ class DashboardKPIView(APIView):
         )
         # Separated to avoid multiplication due to JOINs in the aggregate above
         hoy_qty = ventas_hoy.aggregate(sum_qty=Sum('details__quantity'))['sum_qty']
-        
+
         mes_aggs = ventas_mes.aggregate(
             count=Count('id'),
             sum_total=Sum('total')
         )
         
+        # Gastos Operativos y Costos (COGS)
+        from expenses.models import Expense
+        gastos_hoy = Expense.objects.filter(store=store, date=today).aggregate(total=Sum('amount'))['total'] or 0.0
+        gastos_mes = Expense.objects.filter(store=store, date__gte=first_day_of_month, date__lte=today).aggregate(total=Sum('amount'))['total'] or 0.0
+
+        cogs_mes = SaleDetail.objects.filter(sale__in=ventas_mes).aggregate(
+            cogs=Sum(F('quantity') * F('product__cost_price'))
+        )['cogs'] or 0.0
+        
+        cogs_hoy = SaleDetail.objects.filter(sale__in=ventas_hoy).aggregate(
+            cogs=Sum(F('quantity') * F('product__cost_price'))
+        )['cogs'] or 0.0
+
+        ingresos_mes = float(mes_aggs['sum_total'] or 0.0)
+        ingresos_hoy = float(hoy_aggs['sum_total'] or 0.0)
+        
+        utilidad_bruta_mes = ingresos_mes - float(cogs_mes)
+        utilidad_neta_mes = utilidad_bruta_mes - float(gastos_mes)
+
+        utilidad_bruta_hoy = ingresos_hoy - float(cogs_hoy)
+        utilidad_neta_hoy = utilidad_bruta_hoy - float(gastos_hoy)
+        
         return Response({
             "ventas_hoy": hoy_aggs['count'] or 0,
-            "ingresos_hoy": hoy_aggs['sum_total'] or 0.0,
-            "ticket_promedio": hoy_aggs['avg_total'] or 0.0,
+            "ingresos_hoy": ingresos_hoy,
+            "ticket_promedio": float(hoy_aggs['avg_total'] or 0.0),
             "productos_vendidos_hoy": hoy_qty or 0,
-            "ingresos_mes": mes_aggs['sum_total'] or 0.0,
-            "ventas_mes": mes_aggs['count'] or 0
+            "ingresos_mes": ingresos_mes,
+            "ventas_mes": mes_aggs['count'] or 0,
+            "gastos_hoy": float(gastos_hoy),
+            "gastos_mes": float(gastos_mes),
+            "cogs_mes": float(cogs_mes),
+            "utilidad_bruta_mes": float(utilidad_bruta_mes),
+            "utilidad_neta_mes": float(utilidad_neta_mes),
+            "utilidad_neta_hoy": float(utilidad_neta_hoy),
         })
 
 class SalesOverTimeView(APIView):

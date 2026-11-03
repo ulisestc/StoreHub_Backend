@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'sales',
     'reports',
     'analytics',
+    'expenses',
     'rest_framework',
     'rest_framework_simplejwt',
     'djoser',
