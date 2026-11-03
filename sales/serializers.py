@@ -39,6 +39,7 @@ class SaleSerializer(serializers.ModelSerializer):
             'subtotal',
             'impuestos',
             'total',
+            'payment_method',
             'created_at',
             'details',
         ]

@@ -69,3 +69,6 @@ def send_ticket_email(sale_id, email_to=None):
     except Exception as mail_error:
         print(f"No se pudo enviar el correo: {mail_error}")
         return False, str(mail_error)
+
+
+

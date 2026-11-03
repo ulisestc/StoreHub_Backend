@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from .serializers import SaleSerializer, SaleDetailSerializer
 from .tasks import send_ticket_email
-from decimal import Decimal 
+from decimal import Decimal
 
 class SaleViewSet(
     mixins.CreateModelMixin,
@@ -67,13 +67,29 @@ class SaleViewSet(
                         )
                     )
 
-                # Calcula subtotal e impuestos (16% IVA) extraídos del total
-                # Formula: Total = Subtotal * 1.16 => Subtotal = Total / 1.16
-                subtotal_sale = total_sale / Decimal('1.16')
+                # Calcula subtotal e impuestos extraídos del total según la tasa de la tienda
+                store = self.request.user.store
+                tax_rate = store.tax_rate if store and store.tax_rate is not None else Decimal('0.1600')
+                tax_factor = Decimal('1.0') + tax_rate
+
+                client = serializer.validated_data.get('client')
+                if client and getattr(client, 'is_vip', False):
+                    total_sale = total_sale * Decimal('0.90')  # Aplica 10% de descuento para clientes VIP
+
+                subtotal_sale = total_sale / tax_factor
                 impuestos_sale = total_sale - subtotal_sale
 
-                #Instancia la venta con todo y detalles
-                sale = serializer.save(user=self.request.user, store=self.request.user.store, total=total_sale, subtotal = subtotal_sale, impuestos=impuestos_sale)
+                payment_method = serializer.validated_data.get('payment_method', 'cash')
+
+                # Instancia la venta con todo y detalles
+                sale = serializer.save(
+                    user=self.request.user,
+                    store=self.request.user.store,
+                    total=total_sale,
+                    subtotal=subtotal_sale,
+                    impuestos=impuestos_sale,
+                    payment_method=payment_method
+                )
 
                 for detail in sale_details_to_create:
                     detail.sale = sale
@@ -175,19 +191,29 @@ class CashRegisterSessionViewSet(viewsets.ModelViewSet):
         if not session:
             return Response({"message": "No hay turnos abiertos actualmente.", "session": None}, status=status.HTTP_200_OK)
             
-        # Calculate expected closing balance
-        # Sum of sales (cash) during the session. For now we assume all sales are cash.
-        sales_total = Sale.objects.filter(
+        # Calculate expected closing balance (únicamente ventas en efectivo físico)
+        cash_sales = Sale.objects.filter(
             store=store, 
-            created_at__gte=session.opened_at
+            created_at__gte=session.opened_at,
+            payment_method='cash'
+        ).aggregate(total=Sum('total'))['total'] or Decimal('0.0')
+
+        card_sales = Sale.objects.filter(
+            store=store, 
+            created_at__gte=session.opened_at,
+            payment_method='card'
         ).aggregate(total=Sum('total'))['total'] or Decimal('0.0')
         
-        expected = session.opening_balance + sales_total
+        expected = session.opening_balance + cash_sales
         session.expected_closing_balance = expected
         session.save(update_fields=['expected_closing_balance'])
         
         serializer = self.get_serializer(session)
-        return Response({"session": serializer.data}, status=status.HTTP_200_OK)
+        session_data = dict(serializer.data)
+        session_data['cash_sales_total'] = float(cash_sales)
+        session_data['card_sales_total'] = float(card_sales)
+        session_data['total_sales'] = float(cash_sales + card_sales)
+        return Response({"session": session_data}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='close')
     def close_session(self, request, pk=None):
@@ -205,10 +231,11 @@ class CashRegisterSessionViewSet(viewsets.ModelViewSet):
         except (ValueError, TypeError, Decimal.InvalidOperation):
             return Response({"error": "actual_closing_balance debe ser un número válido."}, status=status.HTTP_400_BAD_REQUEST)
             
-        # Recalculate expected just to be sure
+        # Recalculate expected just to be sure (únicamente ventas en efectivo físico)
         sales_total = Sale.objects.filter(
             store=session.store, 
-            created_at__gte=session.opened_at
+            created_at__gte=session.opened_at,
+            payment_method='cash'
         ).aggregate(total=Sum('total'))['total'] or Decimal('0.0')
         
         expected = session.opening_balance + sales_total
