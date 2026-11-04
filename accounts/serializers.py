@@ -53,3 +53,28 @@ class EmployeeSerializer(serializers.ModelSerializer):
         # La contraseña temporal y estados se manejan en el ViewSet
         user = User(**validated_data)
         return user
+
+
+from .models import AuditLog
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    action_label = serializers.CharField(source='get_action_display', read_only=True)
+
+    class Meta:
+        model = AuditLog
+        fields = (
+            'id',
+            'user',
+            'user_name',
+            'user_role',
+            'action',
+            'action_label',
+            'entity',
+            'entity_id',
+            'description',
+            'before_data',
+            'after_data',
+            'ip_address',
+            'created_at',
+        )
+        read_only_fields = fields

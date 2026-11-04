@@ -75,3 +75,76 @@ def create_user_store(sender, instance, created, **kwargs):
                 User.objects.filter(pk=instance.pk).update(store=store)
         except (OperationalError, ProgrammingError):
             pass
+
+
+class AuditLog(models.Model):
+    ACTION_CHOICES = (
+        ('PRECIO_CAMBIADO', 'Cambio de Precio'),
+        ('INVENTARIO_AJUSTADO', 'Ajuste de Inventario'),
+        ('PRODUCTO_CREADO', 'Producto Creado'),
+        ('PRODUCTO_ELIMINADO', 'Producto Eliminado'),
+        ('GASTO_REGISTRADO', 'Gasto Registrado'),
+        ('GASTO_ELIMINADO', 'Gasto Eliminado'),
+        ('CAJA_ABIERTA', 'Apertura de Caja'),
+        ('CAJA_CERRADA', 'Cierre de Caja'),
+        ('CONFIG_CAMBIADA', 'Configuración Modificada'),
+        ('USUARIO_CREADO', 'Empleado Registrado'),
+        ('USUARIO_ELIMINADO', 'Empleado Eliminado'),
+    )
+
+    store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='audit_logs')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='audit_logs')
+    user_name = models.CharField("Usuario", max_length=150)
+    user_role = models.CharField("Rol", max_length=20, default='admin')
+    action = models.CharField("Acción", max_length=40, choices=ACTION_CHOICES)
+    entity = models.CharField("Entidad", max_length=60)
+    entity_id = models.CharField("ID de Entidad", max_length=60, blank=True, default='')
+    description = models.TextField("Descripción")
+    before_data = models.JSONField("Datos Anteriores", null=True, blank=True)
+    after_data = models.JSONField("Datos Nuevos", null=True, blank=True)
+    ip_address = models.CharField("Dirección IP", max_length=45, blank=True, null=True)
+    created_at = models.DateTimeField("Fecha", auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Registro de Auditoría'
+        verbose_name_plural = 'Bitácora de Auditoría'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"[{self.action}] {self.description}"
+
+
+def get_client_ip(request):
+    if not request:
+        return None
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        return x_forwarded_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+
+
+def log_audit_event(request, action, entity, entity_id, description, before_data=None, after_data=None):
+    """
+    Registra de manera segura e inmutable un evento en la bitácora de auditoría de la tienda.
+    Nunca interrumpe el flujo principal en caso de excepción.
+    """
+    try:
+        user = getattr(request, 'user', None)
+        if not user or not user.is_authenticated or not getattr(user, 'store', None):
+            return None
+        full_name = f"{user.first_name} {user.last_name}".strip() or user.email
+        return AuditLog.objects.create(
+            store=user.store,
+            user=user,
+            user_name=full_name,
+            user_role=getattr(user, 'role', 'seller'),
+            action=action,
+            entity=entity,
+            entity_id=str(entity_id) if entity_id is not None else '',
+            description=description,
+            before_data=before_data,
+            after_data=after_data,
+            ip_address=get_client_ip(request),
+        )
+    except Exception:
+        return None

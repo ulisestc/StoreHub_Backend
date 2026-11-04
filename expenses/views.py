@@ -31,10 +31,33 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(
+        from accounts.models import log_audit_event
+        expense = serializer.save(
             store=self.request.user.store,
             user=self.request.user
         )
+        log_audit_event(
+            request=self.request,
+            action='GASTO_REGISTRADO',
+            entity=expense.title,
+            entity_id=expense.id,
+            description=f"Registró gasto '{expense.title}' por ${float(expense.amount):.2f} ({expense.get_category_display()})",
+            before_data=None,
+            after_data={'concepto': expense.title, 'monto': float(expense.amount), 'categoria': expense.get_category_display()}
+        )
+
+    def perform_destroy(self, instance):
+        from accounts.models import log_audit_event
+        log_audit_event(
+            request=self.request,
+            action='GASTO_ELIMINADO',
+            entity=instance.title,
+            entity_id=instance.id,
+            description=f"Eliminó gasto '{instance.title}' de ${float(instance.amount):.2f}",
+            before_data={'concepto': instance.title, 'monto': float(instance.amount), 'categoria': instance.get_category_display()},
+            after_data=None
+        )
+        instance.delete()
 
     @action(detail=False, methods=['get'], url_path='summary')
     def summary(self, request):

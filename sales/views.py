@@ -32,8 +32,17 @@ class SaleViewSet(
             for detail_data in details_data:
                 if detail_data['quantity'] <= 0:
                     raise serializers.ValidationError("La cantidad debe ser mayor a cero.")
-                if detail_data['product'].stock < detail_data['quantity']:
-                    raise serializers.ValidationError("No hay suficiente stock para el producto seleccionado.")
+                product = detail_data.get('product')
+                if product is not None:
+                    if product.stock < detail_data['quantity']:
+                        raise serializers.ValidationError("No hay suficiente stock para el producto seleccionado.")
+                else:
+                    custom_desc = (detail_data.get('custom_description') or '').strip()
+                    custom_price = detail_data.get('custom_price')
+                    if not custom_desc:
+                        raise serializers.ValidationError("Los cargos libres deben incluir un concepto o descripción.")
+                    if custom_price is None or custom_price <= Decimal('0.0'):
+                        raise serializers.ValidationError("El precio del cargo libre debe ser mayor a cero.")
         # end validaciones -----------------------------
 
         try:
@@ -46,22 +55,28 @@ class SaleViewSet(
                 sale_details_to_create = []
 
                 for detail_data in details_data:
-                    product = detail_data['product']
-                    quantity = detail_data['quantity']      
-                    price_at_sale = product.price
+                    product = detail_data.get('product')
+                    quantity = detail_data['quantity']
+                    
+                    if product is not None:
+                        price_at_sale = product.price
+                        custom_description = None
+                        # Actualiza el stock del producto
+                        product.stock -= quantity
+                        product.save()
+                    else:
+                        price_at_sale = detail_data['custom_price']
+                        custom_description = (detail_data.get('custom_description') or 'Venta libre').strip()
 
                     # OXXO model: Product price already includes VAT.
                     item_total = price_at_sale * quantity
                     total_sale += item_total
-
-                    # Actualiza el stock del producto
-                    product.stock -= quantity
-                    product.save()
                     
                     # Prepara el objeto SaleDetail para crearlo después
                     sale_details_to_create.append(
                         SaleDetail(
                             product=product,
+                            custom_description=custom_description,
                             quantity=quantity,
                             price_at_sale=price_at_sale
                         )
@@ -153,6 +168,7 @@ from .models import CashRegisterSession
 from .serializers import CashRegisterSessionSerializer
 from django.utils import timezone
 from django.db.models import Sum
+from accounts.models import log_audit_event
 
 class CashRegisterSessionViewSet(viewsets.ModelViewSet):
     serializer_class = CashRegisterSessionSerializer
@@ -179,6 +195,15 @@ class CashRegisterSessionViewSet(viewsets.ModelViewSet):
             opened_by=request.user,
             opening_balance=opening_balance,
             notes=request.data.get('notes', '')
+        )
+        log_audit_event(
+            request=request,
+            action='CAJA_ABIERTA',
+            entity='Turno de Caja',
+            entity_id=session.id,
+            description=f"Abrió turno de caja #{session.id} con fondo inicial de ${float(session.opening_balance):.2f}",
+            before_data=None,
+            after_data={'fondo_inicial': float(session.opening_balance), 'notas': session.notes or ''}
         )
         serializer = self.get_serializer(session)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -250,6 +275,18 @@ class CashRegisterSessionViewSet(viewsets.ModelViewSet):
             session.notes = f"{session.notes}\nCierre: {notes}" if session.notes else f"Cierre: {notes}"
             
         session.save()
+
+        diff = float(actual_closing_balance - expected)
+        diff_label = f"diferencia de ${diff:+.2f}" if abs(diff) >= 0.01 else "cuadre exacto ($0.00)"
+        log_audit_event(
+            request=request,
+            action='CAJA_CERRADA',
+            entity='Turno de Caja',
+            entity_id=session.id,
+            description=f"Cerró turno de caja #{session.id}: esperado ${float(expected):.2f}, declarado ${float(actual_closing_balance):.2f} ({diff_label})",
+            before_data={'esperado': float(expected), 'fondo_inicial': float(session.opening_balance)},
+            after_data={'declarado': float(actual_closing_balance), 'diferencia': round(diff, 2)}
+        )
         
         serializer = self.get_serializer(session)
         return Response(serializer.data, status=status.HTTP_200_OK)

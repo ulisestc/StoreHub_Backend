@@ -1,9 +1,10 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import EmployeeViewSet, StoreConfigView, ForceChangePasswordView
+from .views import EmployeeViewSet, StoreConfigView, ForceChangePasswordView, AuditLogViewSet
 
 router = DefaultRouter()
 router.register(r'employees', EmployeeViewSet, basename='employee')
+router.register(r'audit-logs', AuditLogViewSet, basename='audit-log')
 
 urlpatterns = [
     path('store/me/', StoreConfigView.as_view(), name='store-config'),
