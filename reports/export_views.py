@@ -79,7 +79,7 @@ class ExportFullReportToExcel(APIView):
             details_data.append({
                 'ID Venta': detail.sale.id,
                 'Fecha': detail.sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                'Producto': detail.product.name if detail.product else 'N/A',
+                'Producto': detail.product.name if detail.product else (detail.custom_description or 'Venta libre'),
                 'Cantidad': detail.quantity,
                 'Precio Unitario': float(detail.price_at_sale),
                 'Subtotal Línea': float(detail.quantity * detail.price_at_sale),

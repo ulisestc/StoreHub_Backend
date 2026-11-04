@@ -3,8 +3,13 @@ from .models import Sale, SaleDetail
 from clients.models import Client
 
 class SaleDetailSerializer(serializers.ModelSerializer):
-    #importamos nombre del producto para detalles
-    product_name = serializers.CharField(source = 'product.name', read_only=True ) #read only para no tener que ponerlo en el POST
+    product_name = serializers.SerializerMethodField(read_only=True)
+    custom_price = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True, write_only=True)
+
+    def get_product_name(self, obj):
+        if obj.product:
+            return obj.product.name
+        return obj.custom_description or 'Venta libre'
 
     class Meta:
         model = SaleDetail
@@ -12,10 +17,16 @@ class SaleDetailSerializer(serializers.ModelSerializer):
             'id',
             'product',
             'product_name',
+            'custom_description',
+            'custom_price',
             'quantity',
             'price_at_sale',
         ]
         read_only_fields = ['price_at_sale', 'product_name']
+        extra_kwargs = {
+            'product': {'required': False, 'allow_null': True},
+            'custom_description': {'required': False, 'allow_null': True, 'allow_blank': True},
+        }
 
         
 class SaleSerializer(serializers.ModelSerializer):

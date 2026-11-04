@@ -16,7 +16,8 @@ class Sale(models.Model):
 
 class SaleDetail(models.Model):
     sale = models.ForeignKey(Sale, related_name='details', on_delete=models.CASCADE)
-    product = models.ForeignKey('products.Product', on_delete=models.CASCADE)
+    product = models.ForeignKey('products.Product', on_delete=models.SET_NULL, null=True, blank=True)
+    custom_description = models.CharField(max_length=150, null=True, blank=True)
     quantity = models.PositiveIntegerField()
     price_at_sale = models.DecimalField(max_digits=10, decimal_places=2)
 

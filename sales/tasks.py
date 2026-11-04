@@ -27,7 +27,8 @@ def send_ticket_email(sale_id, email_to=None):
     
     detalles_texto = ""
     for detail in details:
-        detalles_texto += f"- {detail.quantity}x {detail.product.name} = ${detail.quantity * detail.price_at_sale}\n"
+        item_name = detail.product.name if detail.product else (detail.custom_description or "Venta libre")
+        detalles_texto += f"- {detail.quantity}x {item_name} = ${detail.quantity * detail.price_at_sale}\n"
     
     cliente_nombre = sale.client.name if sale.client else "Cliente"
     

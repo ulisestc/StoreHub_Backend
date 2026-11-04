@@ -39,11 +39,11 @@ class DashboardKPIView(APIView):
         gastos_hoy = Expense.objects.filter(store=store, date=today).aggregate(total=Sum('amount'))['total'] or 0.0
         gastos_mes = Expense.objects.filter(store=store, date__gte=first_day_of_month, date__lte=today).aggregate(total=Sum('amount'))['total'] or 0.0
 
-        cogs_mes = SaleDetail.objects.filter(sale__in=ventas_mes).aggregate(
+        cogs_mes = SaleDetail.objects.filter(sale__in=ventas_mes, product__isnull=False).aggregate(
             cogs=Sum(F('quantity') * F('product__cost_price'))
         )['cogs'] or 0.0
         
-        cogs_hoy = SaleDetail.objects.filter(sale__in=ventas_hoy).aggregate(
+        cogs_hoy = SaleDetail.objects.filter(sale__in=ventas_hoy, product__isnull=False).aggregate(
             cogs=Sum(F('quantity') * F('product__cost_price'))
         )['cogs'] or 0.0
 
@@ -106,7 +106,7 @@ class TopProductsView(APIView):
         store = request.user.store
         limit = int(request.query_params.get('limit', 10))
         
-        products = SaleDetail.objects.filter(sale__store=store).values(
+        products = SaleDetail.objects.filter(sale__store=store, product__isnull=False).values(
             'product__name', 'product__id'
         ).annotate(
             total_vendido=Sum('quantity'),
@@ -138,7 +138,7 @@ class SalesByCategoryView(APIView):
         
         return Response([
             {
-                "category": item['product__category__name'] or 'Sin Categoría',
+                "category": item['product__category__name'] or 'Venta Libre / Sin Categoría',
                 "total": item['total'] or 0.0,
                 "count": item['count'] or 0
             }
@@ -170,6 +170,9 @@ class TopSellersView(APIView):
         store = request.user.store
         
         sellers = Sale.objects.filter(store=store).annotate(
+            seller_name=Concat('user__first_name', Value(' '), 'user__first_name', output_field=CharField())
+        )
+        sellers = Sale.objects.filter(store=store).annotate(
             seller_name=Concat('user__first_name', Value(' '), 'user__last_name', output_field=CharField())
         ).values('seller_name').annotate(
             ventas=Count('id'),
@@ -191,7 +194,7 @@ class ProfitabilityView(APIView):
     def get(self, request):
         store = request.user.store
         
-        products = SaleDetail.objects.filter(sale__store=store).values(
+        products = SaleDetail.objects.filter(sale__store=store, product__isnull=False).values(
             'product__name'
         ).annotate(
             revenue=Sum(F('quantity') * F('price_at_sale')),

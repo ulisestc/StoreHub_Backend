@@ -86,7 +86,7 @@ class TopProductsReport(APIView):
     
     def get(self, request):
         limit = int(request.query_params.get('limit', 10))
-        top_products = SaleDetail.objects.filter(sale__store=request.user.store)\
+        top_products = SaleDetail.objects.filter(sale__store=request.user.store, product__isnull=False)\
             .values('product__name')\
             .annotate(total_vendido=Sum('quantity'))\
             .order_by('-total_vendido')[:limit]
@@ -139,8 +139,6 @@ class SalesHeatmapReport(APIView):
             
         return Response(list(heatmap))
 
-        return Response(list(heatmap))
-
 import math
 from collections import defaultdict
 from itertools import combinations
@@ -158,15 +156,19 @@ class MarketBasketReport(APIView):
         # 1. Obtener todas las ventas y sus productos
         # limitamos a los últimos 30 o 90 días para rendimiento en tiendas grandes
         days_ago = timezone.now() - timedelta(days=90)
-        sales_data = SaleDetail.objects.filter(sale__store=request.user.store, sale__created_at__gte=days_ago)\
-                                       .values_list('sale_id', 'product__name')
+        sales_data = SaleDetail.objects.filter(
+            sale__store=request.user.store,
+            sale__created_at__gte=days_ago,
+            product__isnull=False
+        ).values_list('sale_id', 'product__name')
         
         # Agrupar productos por venta
         transactions = defaultdict(set)
         product_counts = defaultdict(int)
         
         for sale_id, product_name in sales_data:
-            transactions[sale_id].add(product_name)
+            if product_name:
+                transactions[sale_id].add(product_name)
 
         total_transactions = len(transactions)
         if total_transactions == 0:
@@ -221,10 +223,13 @@ class SafetyStockReport(APIView):
         
         # Ventas agrupadas por producto y día
         from django.db.models.functions import TruncDate
-        daily_sales = SaleDetail.objects.filter(sale__store=request.user.store, sale__created_at__gte=days_ago)\
-            .annotate(date=TruncDate('sale__created_at'))\
-            .values('product_id', 'product__name', 'product__stock', 'date')\
-            .annotate(daily_sold=Sum('quantity'))
+        daily_sales = SaleDetail.objects.filter(
+            sale__store=request.user.store,
+            sale__created_at__gte=days_ago,
+            product__isnull=False
+        ).annotate(date=TruncDate('sale__created_at'))\
+         .values('product_id', 'product__name', 'product__stock', 'date')\
+         .annotate(daily_sold=Sum('quantity'))
             
         product_data = defaultdict(lambda: {'name': '', 'stock': 0, 'sales': []})
         
@@ -272,7 +277,7 @@ class ABCAnalysisReport(APIView):
     permission_classes = [IsAuthenticated, IsAdminRole]
 
     def get(self, request):
-        products = SaleDetail.objects.filter(sale__store=request.user.store)\
+        products = SaleDetail.objects.filter(sale__store=request.user.store, product__isnull=False)\
             .values('product__name')\
             .annotate(total_revenue=Sum(F('quantity') * F('price_at_sale'), output_field=FloatField()))\
             .order_by('-total_revenue')
