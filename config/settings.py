@@ -88,10 +88,16 @@ else:
         'https://storehub-two.vercel.app',
     ]
     
-    # Agregar URL dinámica desde el entorno si existe
-    frontend_url = env('FRONTEND_URL', default=None)
-    if frontend_url and frontend_url not in CORS_ALLOWED_ORIGINS:
-        CORS_ALLOWED_ORIGINS.append(frontend_url)
+    # Agregar una o varias URLs dinámicas desde el entorno (separadas por coma o en FRONTEND_URL_2)
+    raw_urls = [
+        env('FRONTEND_URL', default=''),
+        env('FRONTEND_URL_2', default=''),
+    ]
+    for raw in raw_urls:
+        for url in raw.split(','):
+            clean_url = url.strip().rstrip('/')
+            if clean_url and clean_url not in CORS_ALLOWED_ORIGINS:
+                CORS_ALLOWED_ORIGINS.append(clean_url)
 
 
 ROOT_URLCONF = 'config.urls'
